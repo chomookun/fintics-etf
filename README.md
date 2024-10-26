@@ -1,2 +1,2 @@
 # fintics-emp
-Fintics EMP(ETF Managed Portfolio)
+Fintics EMP(ETP Managed Portfolio)
