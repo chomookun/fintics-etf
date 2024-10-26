@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="_web.html">
+<th:block layout:fragment="_content">
+    <script th:inline="javascript">
+        const simulate = new duice.ObjectProxy({
+
+        });
+
+    </script>
+    <style th:inline="css">
+
+    </style>
+
+    <!-- ====================================== -->
+    <!-- start: title                           -->
+    <!-- ====================================== -->
+    <h1 id="title">
+        <img class="icon" th:src="@{/static/image/icon-simulate.svg}" alt="simulate"/>
+        <span data-th-text="#{fintics.emp.Simulate}"></span>
+        <small>|</small>
+        <span data-duice-bind="simulate" data-duice-property="name"></span>
+    </h1>
+    <!-- ====================================== -->
+    <!-- end: title                             -->
+    <!-- ====================================== -->
+
+</th:block>

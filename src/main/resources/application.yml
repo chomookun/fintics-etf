@@ -1,0 +1,30 @@
+# logging
+logging:
+  level:
+    org.springframework.web.socket: DEBUG
+    org.springframework.messaging.simp.stomp: DEBUG
+
+# server
+server:
+  tomcat:
+    threads:
+      max: 200
+      min-spare: 100
+
+# spring
+spring:
+  thymeleaf:
+    cache: false
+  datasource:
+    hikari:
+      transaction-isolation: TRANSACTION_READ_UNCOMMITTED
+      leakDetectionThreshold: 300000
+
+# web
+web:
+  brand: <span><img src="/static/image/fintics-emp-icon.svg"/><img src="/static/image/fintics-emp-title.svg"/></span>
+  favicon: /static/image/fintics-icon.svg
+  title: Fintics EMP
+  index: simulate
+  security-policy: ANONYMOUS
+
