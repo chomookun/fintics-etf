@@ -37,7 +37,7 @@ public class DividendEntity extends BaseEntity {
     @Column(name = "date")
     private LocalDate date;
 
-    @Column(name = "amount")
+    @Column(name = "amount", scale = 4)
     private BigDecimal amount;
 
 }

@@ -1,8 +1,10 @@
 package org.oopscraft.fintics.emp.collector;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.type.TypeBase;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.math3.analysis.function.Divide;
 import org.oopscraft.fintics.emp.model.Asset;
@@ -15,10 +17,13 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @Component
 @RequiredArgsConstructor
@@ -59,11 +64,27 @@ public class DividendCollector extends AbstractCollector {
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
+        JsonNode resultNode = rootNode.path("chart").path("result").get(0);
+        JsonNode eventsNode = resultNode.path("events").path("dividends");
+        Map<String,Map<String,Double>> dividendsMap = objectMapper.convertValue(eventsNode, new TypeReference<>(){});
 
+        List<Dividend> dividends = new ArrayList<>();
+        for (Map.Entry<String, Map<String,Double>> entry : dividendsMap.entrySet()) {
+            Map<String,Double> value = entry.getValue();
+            LocalDate date = Instant.ofEpochSecond(value.get("date").longValue())
+                    .atOffset(ZoneOffset.UTC)
+                    .toLocalDate();
+            BigDecimal amount = BigDecimal.valueOf(value.get("amount"));
+            Dividend dividend = Dividend.builder()
+                    .assetId(asset.getAssetId())
+                    .date(date)
+                    .amount(amount)
+                    .build();
+            dividends.add(dividend);
+        }
 
-
-
-        return new ArrayList<>();
+        // returns
+        return dividends;
     }
 
     /* creates yahoo http header
