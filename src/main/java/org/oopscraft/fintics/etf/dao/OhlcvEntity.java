@@ -10,7 +10,8 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-@Entity(name = "fintics_emp_ohlcv")
+@Entity
+@Table(name = "fintics_emp_ohlcv")
 @IdClass(OhlcvEntity.Pk.class)
 @Data
 @EqualsAndHashCode(callSuper = true)

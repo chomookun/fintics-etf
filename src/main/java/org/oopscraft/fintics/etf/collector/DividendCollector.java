@@ -52,9 +52,8 @@ public class DividendCollector extends AbstractCollector {
                 // defines date from, date to
                 LocalDate dateFrom = LocalDate.now().minusYears(20);
                 LocalDate dateTo = LocalDate.now();
-                List<DividendEntity> previousDividendEntities = dividendRepository.findAllByAssetIdOrderByDate(assetEntity.getAssetId());
-                if (previousDividendEntities.size() > 0) {
-                    DividendEntity latestDividendEntity = previousDividendEntities.get(0);
+                DividendEntity latestDividendEntity = dividendRepository.findFirstByAssetIdOrderByDateDesc(assetEntity.getAssetId()).orElse(null);
+                if (latestDividendEntity != null) {
                     dateFrom = latestDividendEntity.getDate().plusDays(1);
                 }
 

@@ -4,15 +4,13 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.oopscraft.arch4j.core.common.data.BaseEntity;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.IdClass;
+import javax.persistence.*;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-@Entity(name = "fintics_emp_dividend")
+@Entity
+@Table(name = "fintics_emp_dividend")
 @IdClass(DividendEntity.Pk.class)
 @Data
 @EqualsAndHashCode(callSuper = true)

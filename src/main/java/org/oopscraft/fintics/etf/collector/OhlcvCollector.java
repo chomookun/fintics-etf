@@ -6,10 +6,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.oopscraft.fintics.etf.dao.AssetEntity;
-import org.oopscraft.fintics.etf.dao.AssetRepository;
-import org.oopscraft.fintics.etf.dao.OhlcvEntity;
-import org.oopscraft.fintics.etf.dao.OhlcvRepository;
+import org.oopscraft.fintics.etf.dao.*;
 import org.oopscraft.fintics.etf.model.Asset;
 import org.oopscraft.fintics.etf.model.Ohlcv;
 import org.springframework.http.HttpHeaders;
@@ -53,9 +50,8 @@ public class OhlcvCollector extends AbstractCollector {
                 // defines date from, date to
                 LocalDate dateFrom = LocalDate.now().minusYears(20);
                 LocalDate dateTo = LocalDate.now();
-                List<OhlcvEntity> previousOhlcvEntities = ohlcvRepository.findAllByAssetIdOrderByDate(assetEntity.getAssetId());
-                if (previousOhlcvEntities.size() > 0) {
-                    OhlcvEntity latestOhlcvEntity = previousOhlcvEntities.get(0);
+                OhlcvEntity latestOhlcvEntity = ohlcvRepository.findFirstByAssetIdOrderByDateDesc(assetEntity.getAssetId()).orElse(null);
+                if (latestOhlcvEntity != null) {
                     dateFrom = latestOhlcvEntity.getDate().plusDays(1);
                 }
 

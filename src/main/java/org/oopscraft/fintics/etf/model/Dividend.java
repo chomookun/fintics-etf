@@ -1,6 +1,7 @@
 package org.oopscraft.fintics.etf.model;
 
 import lombok.*;
+import org.oopscraft.fintics.etf.dao.DividendEntity;
 
 import javax.persistence.Column;
 import javax.persistence.Id;
@@ -18,5 +19,13 @@ public class Dividend {
     private LocalDate date;
 
     private BigDecimal amount;
+
+    public static Dividend from(DividendEntity dividendEntity) {
+        return Dividend.builder()
+                .assetId(dividendEntity.getAssetId())
+                .date(dividendEntity.getDate())
+                .amount(dividendEntity.getAmount())
+                .build();
+    }
 
 }

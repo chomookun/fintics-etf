@@ -7,9 +7,11 @@ import org.oopscraft.arch4j.core.common.data.BaseEntity;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
+import javax.persistence.Table;
 import java.math.BigDecimal;
 
-@Entity(name = "fintics_emp_asset")
+@Entity
+@Table(name = "fintics_emp_asset")
 @Data
 @EqualsAndHashCode(callSuper = true)
 @SuperBuilder
