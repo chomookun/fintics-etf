@@ -4,7 +4,6 @@ import lombok.RequiredArgsConstructor;
 import org.junit.jupiter.api.Test;
 import org.oopscraft.arch4j.core.common.test.CoreTestSupport;
 import org.oopscraft.fintics.etf.FinticsEtfApplication;
-import org.oopscraft.fintics.etf.dao.AssetEntity;
 import org.oopscraft.fintics.etf.dao.DividendEntity;
 import org.oopscraft.fintics.etf.model.Dividend;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -35,7 +34,7 @@ class DividendServiceTest extends CoreTestSupport {
         entityManager.persist(dividendEntity);
         entityManager.flush();
         // when
-        List<Dividend> dividends = dividendService.getDividend(assetId, dateFrom, dateTo);
+        List<Dividend> dividends = dividendService.getDividends(assetId, dateFrom, dateTo);
         // then
         assertTrue(dividends.size() > 0);
     }

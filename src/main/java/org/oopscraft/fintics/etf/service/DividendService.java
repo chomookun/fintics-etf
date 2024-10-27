@@ -14,7 +14,7 @@ public class DividendService {
 
     private final DividendRepository dividendRepository;
 
-    public List<Dividend> getDividend(String assetId, LocalDate dateFrom, LocalDate dateTo) {
+    public List<Dividend> getDividends(String assetId, LocalDate dateFrom, LocalDate dateTo) {
         return dividendRepository.findAllBy(assetId, dateFrom, dateTo).stream()
                 .map(Dividend::from)
                 .toList();
