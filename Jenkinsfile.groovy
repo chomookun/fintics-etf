@@ -86,12 +86,12 @@ pipeline {
             steps {
                 sh '''
                     kubectl \
-                    rollout restart deployment/fintics-emp \
+                    rollout restart deployment/fintics-etf \
                     -o yaml
                 '''.stripIndent()
                 sh '''
                     kubectl \
-                    rollout status deployment/fintics-emp
+                    rollout status deployment/fintics-etf
                 '''.stripIndent()
             }
         }
