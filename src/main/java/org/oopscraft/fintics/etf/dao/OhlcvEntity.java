@@ -11,7 +11,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Entity
-@Table(name = "fintics_emp_ohlcv")
+@Table(name = "fintics_etf_ohlcv")
 @IdClass(OhlcvEntity.Pk.class)
 @Data
 @EqualsAndHashCode(callSuper = true)

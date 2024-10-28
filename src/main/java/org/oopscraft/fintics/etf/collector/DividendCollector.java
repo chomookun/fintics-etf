@@ -22,6 +22,8 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.math.BigDecimal;
+import java.math.MathContext;
+import java.math.RoundingMode;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
@@ -34,7 +36,7 @@ import java.util.stream.Collectors;
 @Slf4j
 public class DividendCollector extends AbstractCollector {
 
-    private static final int INTERVAL = 10_000;
+    private static final int INTERVAL = 3_000;
 
     private final AssetRepository assetRepository;
 
@@ -44,7 +46,7 @@ public class DividendCollector extends AbstractCollector {
 
     private final PlatformTransactionManager transactionManager;
 
-    @Scheduled(initialDelay = 600_000, fixedDelay = 60_000 * 60 * 24)
+    @Override
     public void collect() {
         List<AssetEntity> assetEntities = assetRepository.findAll();
         for (AssetEntity assetEntity : assetEntities) {
@@ -83,6 +85,40 @@ public class DividendCollector extends AbstractCollector {
 
                 // saves bulk
                 saveEntities("dividendEntities", dividendEntities, transactionManager, dividendRepository);
+
+                // updates dividend interval
+                List<DividendEntity> yearlyDividends = dividendRepository.findAllBy(asset.getAssetId(), LocalDate.now().minusYears(1), LocalDate.now()).stream()
+                        .filter(it -> it.getDate().isAfter(LocalDate.now().minusYears(1)))
+                        .toList();
+                long yearlyPaymentCount = yearlyDividends.size();
+                String dividendFrequency = null;
+                if (yearlyPaymentCount > 0) {
+                    if (yearlyPaymentCount >= 10) {
+                        dividendFrequency = "MONTHLY";
+                    } else if (yearlyPaymentCount >= 3) {
+                        dividendFrequency = "QUARTERLY";
+                    } else if (yearlyPaymentCount >= 1) {
+                        dividendFrequency = "YEARLY";
+                    }
+                    assetEntity.setDividendFrequency(dividendFrequency);
+                }
+
+                // updates dividend yield
+                BigDecimal dividendAmount = yearlyDividends.stream()
+                        .map(DividendEntity::getAmount)
+                        .reduce(BigDecimal.ZERO, BigDecimal::add);
+                if (dividendAmount.compareTo(BigDecimal.ZERO) > 0 && assetEntity.getClose() != null) {
+                    BigDecimal dividendYield = dividendAmount
+                            .divide(assetEntity.getClose(), MathContext.DECIMAL32)
+                            .multiply(BigDecimal.valueOf(100))
+                            .setScale(2, RoundingMode.FLOOR);
+                    assetEntity.setDividendYield(dividendYield);
+                }
+
+                // saves asset entity
+                assetEntity.setUpdatedDate(LocalDate.now());
+                saveEntities("assetEntities", List.of(assetEntity), transactionManager, assetRepository);
+
             } catch (Throwable t) {
                 log.warn(t.getMessage());
             } finally {

@@ -10,7 +10,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Entity
-@Table(name = "fintics_emp_dividend")
+@Table(name = "fintics_etf_dividend")
 @IdClass(DividendEntity.Pk.class)
 @Data
 @EqualsAndHashCode(callSuper = true)

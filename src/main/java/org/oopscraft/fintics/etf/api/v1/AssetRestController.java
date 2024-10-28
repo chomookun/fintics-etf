@@ -23,7 +23,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/assets")
-@PreAuthorize("hasAuthority('api.assets')")
 @Tag(name = "assets", description = "Assets")
 @RequiredArgsConstructor
 @Slf4j
@@ -35,11 +34,15 @@ public class AssetRestController {
     public ResponseEntity<List<AssetResponse>> getAssets(
             @RequestParam(value = "asset_id", required = false) String assetId,
             @RequestParam(value = "name", required = false) String name,
+            @RequestParam(value = "market", required = false) String market,
+            @RequestParam(value = "dividendFrequency", required = false) String dividendFrequency,
             @PageableDefault Pageable pageable
     ) {
         AssetSearch assetSearch = AssetSearch.builder()
                 .assetId(assetId)
                 .name(name)
+                .market(market)
+                .dividendFrequency(dividendFrequency)
                 .build();
         Page<Asset> assetPage = assetService.getAssets(assetSearch, pageable);
         List<AssetResponse> assetResponses = assetPage.getContent().stream()

@@ -4,14 +4,17 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.oopscraft.arch4j.core.common.data.BaseEntity;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import javax.persistence.*;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 
 @Entity
-@Table(name = "fintics_emp_asset")
+@Table(name = "fintics_etf_asset",
+    indexes = {
+        @Index(name = "idx_fintics_etf_market", columnList = "market"),
+        @Index(name = "idx_fintics_etf_asset_name", columnList = "name"),
+        @Index(name = "idx_fintics_etf_asset_dividend_frequency", columnList = "dividend_frequency")
+    })
 @Data
 @EqualsAndHashCode(callSuper = true)
 @SuperBuilder
@@ -32,10 +35,22 @@ public class AssetEntity extends BaseEntity {
     @Column(name = "exchange", length = 16)
     private String exchange;
 
-    @Column(name = "type", length = 16)
-    private String type;
+    @Column(name = "updated_date")
+    private LocalDate updatedDate;
 
     @Column(name = "market_cap")
     private BigDecimal marketCap;
+
+    @Column(name = "close", scale = 4)
+    private BigDecimal close;
+
+    @Column(name = "volume")
+    private BigDecimal volume;
+
+    @Column(name = "dividend_yield", scale = 2)
+    private BigDecimal dividendYield;
+
+    @Column(name = "dividend_frequency", length = 16)
+    private String dividendFrequency;
 
 }

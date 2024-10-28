@@ -22,6 +22,14 @@ public interface AssetRepository extends JpaRepository<AssetEntity,String>, JpaS
             specification = specification.and(((root, query, criteriaBuilder) ->
                     criteriaBuilder.like(root.get(AssetEntity_.NAME), '%' + assetSearch.getName() + '%')));
         }
+        if (assetSearch.getMarket() != null) {
+            specification = specification.and((root, query, criteriaBuilder) ->
+                    criteriaBuilder.equal(root.get(AssetEntity_.MARKET), assetSearch.getMarket()));
+        }
+        if (assetSearch.getDividendFrequency() != null) {
+            specification = specification.and((root, query, criteriaBuilder) ->
+                    criteriaBuilder.equal(root.get(AssetEntity_.DIVIDEND_FREQUENCY), assetSearch.getDividendFrequency()));
+        }
         // returns
         return findAll(specification, pageable);
     }

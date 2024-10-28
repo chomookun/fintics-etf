@@ -36,7 +36,7 @@ import java.util.List;
 import java.util.Map;
 
 @Slf4j
-public class AbstractCollector {
+public abstract class AbstractCollector {
 
     @Getter
     private RestTemplate restTemplate;
@@ -47,6 +47,8 @@ public class AbstractCollector {
                 .retryCount(3)
                 .build();
     }
+
+    abstract void collect();
 
     /**
      * chunk save entities via specified repository

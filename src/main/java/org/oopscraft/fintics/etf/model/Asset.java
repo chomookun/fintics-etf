@@ -4,6 +4,8 @@ import lombok.*;
 import org.oopscraft.fintics.etf.dao.AssetEntity;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 
 @Data
@@ -20,9 +22,17 @@ public class Asset {
 
     private String exchange;
 
-    private String type;
+    private LocalDate updatedDate;
 
     private BigDecimal marketCap;
+
+    private BigDecimal close;
+
+    private BigDecimal volume;
+
+    private BigDecimal dividendYield;
+
+    private String dividendFrequency;
 
     /**
      * gets symbol
@@ -36,13 +46,34 @@ public class Asset {
                 .orElseThrow(() -> new RuntimeException(String.format("invalid assetId[%s]", getAssetId())));
     }
 
+    /**
+     * get asset icon
+     * @return icon url
+     */
+    public String getIcon() {
+        return IconFactory.getIcon(this);
+    }
+
+    /**
+     * gets asset link
+     * @return link url
+     */
+    public List<Link> getLinks() {
+        return LinkFactory.getLinks(this);
+    }
+
     public static Asset from(AssetEntity assetEntity) {
         return Asset.builder()
                 .assetId(assetEntity.getAssetId())
                 .name(assetEntity.getName())
                 .market(assetEntity.getMarket())
                 .exchange(assetEntity.getExchange())
+                .updatedDate(assetEntity.getUpdatedDate())
                 .marketCap(assetEntity.getMarketCap())
+                .close(assetEntity.getClose())
+                .volume(assetEntity.getVolume())
+                .dividendYield(assetEntity.getDividendYield())
+                .dividendFrequency(assetEntity.getDividendFrequency())
                 .build();
     }
 

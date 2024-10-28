@@ -21,9 +21,8 @@ import org.springframework.transaction.PlatformTransactionManager;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.time.LocalDate;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Component
@@ -37,36 +36,37 @@ public class AssetCollector extends AbstractCollector {
 
     private final AssetRepository assetRepository;
 
-    @Scheduled(initialDelay = 10_000, fixedDelay = 3_600_000 * 24)
+    @Override
     public void collect() {
-        // us assets
         try {
-            List<AssetEntity> assetEntities = getUsAssets().stream()
-                    .map(this::toAssetEntity)
-                    .toList();
-            saveEntities("usAssetEntities", assetEntities, transactionManager, assetRepository);
-        } catch (Throwable t) {
-            log.warn(t.getMessage());
-        }
-        // kr assets
-        try {
-            List<AssetEntity> assetEntities = getKrAssets().stream()
-                    .map(this::toAssetEntity)
-                    .toList();
-            saveEntities("krAssetEntities", assetEntities, transactionManager, assetRepository);
-        } catch (Throwable t) {
-            log.warn(t.getMessage());
-        }
-    }
+            List<AssetEntity> assetEntities = assetRepository.findAll();
+            List<Asset> assets = new ArrayList<>();
+            assets.addAll(getUsAssets());
+            assets.addAll(getKrAssets());
+            for (Asset asset : assets) {
+                AssetEntity assetEntity = assetEntities.stream()
+                        .filter(it -> Objects.equals(it.getAssetId(), asset.getAssetId()))
+                        .findFirst()
+                        .orElse(null);
+                if (assetEntity == null) {
+                    assetEntity = AssetEntity.builder()
+                            .assetId(asset.getAssetId())
+                            .build();
+                    assetEntities.add(assetEntity);
+                }
+                assetEntity.setUpdatedDate(LocalDate.now());
+                assetEntity.setName(asset.getName());
+                assetEntity.setMarket(asset.getMarket());
+                assetEntity.setExchange(asset.getExchange());
+                assetEntity.setMarketCap(asset.getMarketCap());
+                assetEntity.setClose(asset.getClose());
+                assetEntity.setVolume(asset.getVolume());
+            }
 
-    public AssetEntity toAssetEntity(Asset asset) {
-        return AssetEntity.builder()
-                .assetId(asset.getAssetId())
-                .name(asset.getName())
-                .market(asset.getMarket())
-                .exchange(asset.getExchange())
-                .marketCap(asset.getMarketCap())
-                .build();
+            saveEntities("assetEntities", assetEntities, transactionManager, assetRepository);
+        } catch (Throwable t) {
+            log.warn(t.getMessage());
+        }
     }
 
     /**
@@ -102,7 +102,6 @@ public class AssetCollector extends AbstractCollector {
                         .assetId(toAssetId("US", row.get("symbol")))
                         .name(row.get("companyName"))
                         .market("US")
-                        .type("ETF")
                         .build())
                 .collect(Collectors.toList());
 
@@ -216,8 +215,9 @@ public class AssetCollector extends AbstractCollector {
                             .name(row.get("KOR_SECN_NM"))
                             .market("KR")
                             .exchange("KRX")
-                            .type("ETF")
                             .marketCap(marketCap)
+                            .close(new BigDecimal(row.get("CPRI")))
+                            .volume(new BigDecimal(row.get("TR_QTY")))
                             .build();
                 })
                 .collect(Collectors.toList());

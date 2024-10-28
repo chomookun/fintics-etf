@@ -12,4 +12,8 @@ public class AssetSearch {
 
     private String name;
 
+    private String market;
+
+    private String dividendFrequency;
+
 }

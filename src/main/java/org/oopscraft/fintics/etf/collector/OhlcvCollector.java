@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
 @Slf4j
 public class OhlcvCollector extends AbstractCollector {
 
-    private static final int INTERVAL = 10_000;
+    private static final int INTERVAL = 3_000;
 
     private final AssetRepository assetRepository;
 
@@ -42,7 +42,7 @@ public class OhlcvCollector extends AbstractCollector {
 
     private final PlatformTransactionManager transactionManager;
 
-    @Scheduled(initialDelay = 600_000, fixedDelay = 60_000 * 60 * 24)
+    @Override
     public void collect() {
         List<AssetEntity> assetEntities = assetRepository.findAll();
         for (AssetEntity assetEntity : assetEntities) {
