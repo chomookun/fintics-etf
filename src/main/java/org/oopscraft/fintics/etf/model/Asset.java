@@ -1,6 +1,7 @@
 package org.oopscraft.fintics.etf.model;
 
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 import org.oopscraft.fintics.etf.dao.AssetEntity;
 
 import java.math.BigDecimal;
@@ -9,7 +10,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Data
-@Builder
+@SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class Asset {
