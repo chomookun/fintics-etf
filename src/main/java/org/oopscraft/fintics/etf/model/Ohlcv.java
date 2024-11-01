@@ -37,7 +37,6 @@ public class Ohlcv {
                 .low(ohlcvEntity.getLow())
                 .close(ohlcvEntity.getClose())
                 .volume(ohlcvEntity.getVolume())
-                .interpolated(ohlcvEntity.isInterpolated())
                 .build();
     }
 

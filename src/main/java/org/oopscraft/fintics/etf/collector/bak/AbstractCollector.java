@@ -1,4 +1,4 @@
-package org.oopscraft.fintics.etf.collector;
+package org.oopscraft.fintics.etf.collector.bak;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;

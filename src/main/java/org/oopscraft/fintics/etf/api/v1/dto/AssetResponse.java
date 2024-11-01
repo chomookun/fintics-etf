@@ -29,33 +29,37 @@ public class AssetResponse {
 
     private BigDecimal marketCap;
 
-    private BigDecimal close;
-
-    private BigDecimal volume;
-
     private BigDecimal dividendYield;
 
-    private String dividendFrequency;
+    private Integer dividendFrequency;
 
-    @Builder.Default
-    private List<LinkResponse> links = new ArrayList<>();
+    /**
+     * get asset icon
+     * @return icon url
+     */
+    public String getIcon() {
+        return IconFactory.getIcon(this);
+    }
+
+    /**
+     * gets asset link
+     * @return link url
+     */
+    public List<LinkResponse> getLinks() {
+        return LinkResponseFactory.getLinks(this);
+    }
 
     public static AssetResponse from(Asset asset) {
         return AssetResponse.builder()
                 .assetId(asset.getAssetId())
                 .symbol(asset.getSymbol())
-                .icon(asset.getIcon())
                 .name(asset.getName())
                 .market(asset.getMarket())
                 .exchange(asset.getExchange())
                 .updatedDate(asset.getUpdatedDate())
                 .marketCap(asset.getMarketCap())
-                .close(asset.getClose())
-                .volume(asset.getVolume())
                 .dividendYield(asset.getDividendYield())
                 .dividendFrequency(asset.getDividendFrequency())
-                .icon(asset.getIcon())
-                .links(asset.getLinks().stream().map(LinkResponse::from).toList())
                 .build();
     }
 

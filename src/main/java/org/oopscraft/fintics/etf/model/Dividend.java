@@ -3,8 +3,6 @@ package org.oopscraft.fintics.etf.model;
 import lombok.*;
 import org.oopscraft.fintics.etf.dao.DividendEntity;
 
-import javax.persistence.Column;
-import javax.persistence.Id;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 

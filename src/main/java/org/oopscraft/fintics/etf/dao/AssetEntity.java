@@ -41,16 +41,10 @@ public class AssetEntity extends BaseEntity {
     @Column(name = "market_cap")
     private BigDecimal marketCap;
 
-    @Column(name = "close", scale = 4)
-    private BigDecimal close;
-
-    @Column(name = "volume")
-    private BigDecimal volume;
-
     @Column(name = "dividend_yield", scale = 2)
     private BigDecimal dividendYield;
 
-    @Column(name = "dividend_frequency", length = 16)
-    private String dividendFrequency;
+    @Column(name = "dividend_frequency")
+    private Integer dividendFrequency;
 
 }

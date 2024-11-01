@@ -1,58 +1,58 @@
-package org.oopscraft.fintics.etf.collector;
+package org.oopscraft.fintics.etf.collector.bak;
 
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.oopscraft.arch4j.core.common.test.CoreTestSupport;
 import org.oopscraft.fintics.etf.FinticsEtfConfiguration;
 import org.oopscraft.fintics.etf.dao.AssetEntity;
-import org.oopscraft.fintics.etf.dao.DividendEntity;
-import org.oopscraft.fintics.etf.dao.DividendRepository;
+import org.oopscraft.fintics.etf.dao.OhlcvEntity;
+import org.oopscraft.fintics.etf.dao.OhlcvRepository;
 import org.oopscraft.fintics.etf.model.Asset;
-import org.oopscraft.fintics.etf.model.Dividend;
+import org.oopscraft.fintics.etf.model.Ohlcv;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import java.time.LocalDate;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest(classes = FinticsEtfConfiguration.class)
 @RequiredArgsConstructor
-@Slf4j
-class DividendCollectorTest extends CoreTestSupport {
+class OhlcvCollectorTest extends CoreTestSupport {
 
-    private final DividendCollector dividendCollector;
+    private final OhlcvCollector ohlcvCollector;
 
-    private final DividendRepository dividendRepository;
+    private final OhlcvRepository ohlcvRepository;
 
     @Test
-    void getUsDividends() {
+    void getUsOhlcvs() {
         // given
         Asset asset = Asset.builder()
                 .assetId("US.SPY")
+                .market("US")
                 .build();
         LocalDate dateFrom = LocalDate.now().minusYears(1);
         LocalDate dateTo = LocalDate.now();
         // when
-        List<Dividend> dividends = dividendCollector.getUsDividends(asset, dateFrom, dateTo);
+        List<Ohlcv> ohlcvs = ohlcvCollector.getUsOhlcvs(asset, dateFrom, dateTo);
         // then
-        log.info("dividends:{}", dividends);
+        assertTrue(ohlcvs.size() > 0);
     }
 
     @Test
-    void getKrDividends() {
+    void getKrOhlcvs() {
         // given
         Asset asset = Asset.builder()
                 .assetId("KR.069500")
+                .market("KR")
                 .build();
-        LocalDate dateFrom = LocalDate.now().minusYears(10);
+        LocalDate dateFrom = LocalDate.now().minusYears(1);
         LocalDate dateTo = LocalDate.now();
         // when
-        List<Dividend> dividends = dividendCollector.getKrDividends(asset, dateFrom, dateTo);
+        List<Ohlcv> ohlcvs = ohlcvCollector.getKrOhlcvs(asset, dateFrom, dateTo);
         // then
-        log.info("dividends:{}", dividends);
+        assertTrue(ohlcvs.size() > 0);
     }
 
     @Disabled
@@ -69,10 +69,10 @@ class DividendCollectorTest extends CoreTestSupport {
                 .build());
         entityManager.flush();
         // when
-        dividendCollector.collect();
+        ohlcvCollector.collect();
         // then
-        List<DividendEntity> dividendEntities = dividendRepository.findAll();
-        assertTrue(dividendEntities.size() > 0);
+        List<OhlcvEntity> ohlcvEntities = ohlcvRepository.findAll();
+        assertTrue(ohlcvEntities.size() > 0);
     }
 
 }

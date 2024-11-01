@@ -1,4 +1,4 @@
-package org.oopscraft.fintics.etf.collector;
+package org.oopscraft.fintics.etf.collector.bak;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -8,24 +8,22 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.oopscraft.fintics.etf.dao.AssetEntity;
 import org.oopscraft.fintics.etf.dao.AssetRepository;
-import org.oopscraft.fintics.etf.dao.DividendEntity;
-import org.oopscraft.fintics.etf.dao.DividendRepository;
+import org.oopscraft.fintics.etf.dao.OhlcvEntity;
+import org.oopscraft.fintics.etf.dao.OhlcvRepository;
 import org.oopscraft.fintics.etf.model.Asset;
-import org.oopscraft.fintics.etf.model.Dividend;
+import org.oopscraft.fintics.etf.model.Ohlcv;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.math.BigDecimal;
-import java.math.MathContext;
-import java.math.RoundingMode;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -34,13 +32,13 @@ import java.util.stream.Collectors;
 @Component
 @RequiredArgsConstructor
 @Slf4j
-public class DividendCollector extends AbstractCollector {
+public class OhlcvCollector extends AbstractCollector {
 
     private static final int INTERVAL = 3_000;
 
     private final AssetRepository assetRepository;
 
-    private final DividendRepository dividendRepository;
+    private final OhlcvRepository ohlcvRepository;
 
     private final ObjectMapper objectMapper;
 
@@ -54,9 +52,9 @@ public class DividendCollector extends AbstractCollector {
                 // defines date from, date to
                 LocalDate dateFrom = LocalDate.now().minusYears(20);
                 LocalDate dateTo = LocalDate.now();
-                DividendEntity latestDividendEntity = dividendRepository.findFirstByAssetIdOrderByDateDesc(assetEntity.getAssetId()).orElse(null);
-                if (latestDividendEntity != null) {
-                    dateFrom = latestDividendEntity.getDate().plusDays(1);
+                OhlcvEntity latestOhlcvEntity = ohlcvRepository.findFirstByAssetIdOrderByDateDesc(assetEntity.getAssetId()).orElse(null);
+                if (latestOhlcvEntity != null) {
+                    dateFrom = latestOhlcvEntity.getDate().plusDays(1);
                 }
 
                 // check skip
@@ -64,60 +62,30 @@ public class DividendCollector extends AbstractCollector {
                     continue;
                 }
 
-                // get dividend histories
+                // gets ohlcvs
                 Asset asset = Asset.from(assetEntity);
-                List<Dividend> dividends = switch (asset.getMarket()) {
-                    case "US" -> getUsDividends(asset, dateFrom, dateTo);
-                    case "KR" -> getKrDividends(asset, dateFrom, dateTo);
+                List<Ohlcv> ohlcvs = switch (asset.getMarket()) {
+                    case "US" -> getUsOhlcvs(asset, dateFrom, dateTo);
+                    case "KR" -> getKrOhlcvs(asset, dateFrom, dateTo);
                     default -> Collections.emptyList();
                 };
 
-                // convert to dividend entities
-                List<DividendEntity> dividendEntities = dividends.stream()
+                List<OhlcvEntity> ohlcvEntities = ohlcvs.stream()
                         .map(it -> {
-                            return DividendEntity.builder()
+                            return OhlcvEntity.builder()
                                     .assetId(it.getAssetId())
                                     .date(it.getDate())
-                                    .amount(it.getAmount())
+                                    .open(it.getOpen())
+                                    .high(it.getHigh())
+                                    .low(it.getLow())
+                                    .close(it.getClose())
+                                    .volume(it.getVolume())
                                     .build();
                         })
                         .collect(Collectors.toList());
 
                 // saves bulk
-                saveEntities("dividendEntities", dividendEntities, transactionManager, dividendRepository);
-
-                // updates dividend interval
-                List<DividendEntity> yearlyDividends = dividendRepository.findAllBy(asset.getAssetId(), LocalDate.now().minusYears(1), LocalDate.now()).stream()
-                        .filter(it -> it.getDate().isAfter(LocalDate.now().minusYears(1)))
-                        .toList();
-                long yearlyPaymentCount = yearlyDividends.size();
-                String dividendFrequency = null;
-                if (yearlyPaymentCount > 0) {
-                    if (yearlyPaymentCount >= 10) {
-                        dividendFrequency = "MONTHLY";
-                    } else if (yearlyPaymentCount >= 3) {
-                        dividendFrequency = "QUARTERLY";
-                    } else if (yearlyPaymentCount >= 1) {
-                        dividendFrequency = "YEARLY";
-                    }
-                    assetEntity.setDividendFrequency(dividendFrequency);
-                }
-
-                // updates dividend yield
-                BigDecimal dividendAmount = yearlyDividends.stream()
-                        .map(DividendEntity::getAmount)
-                        .reduce(BigDecimal.ZERO, BigDecimal::add);
-                if (dividendAmount.compareTo(BigDecimal.ZERO) > 0 && assetEntity.getClose() != null) {
-                    BigDecimal dividendYield = dividendAmount
-                            .divide(assetEntity.getClose(), MathContext.DECIMAL32)
-                            .multiply(BigDecimal.valueOf(100))
-                            .setScale(2, RoundingMode.FLOOR);
-                    assetEntity.setDividendYield(dividendYield);
-                }
-
-                // saves asset entity
-                assetEntity.setUpdatedDate(LocalDate.now());
-                saveEntities("assetEntities", List.of(assetEntity), transactionManager, assetRepository);
+                saveEntities("ohlcvEntities", ohlcvEntities, transactionManager, ohlcvRepository);
 
             } catch (Throwable t) {
                 log.warn(t.getMessage());
@@ -130,11 +98,14 @@ public class DividendCollector extends AbstractCollector {
     }
 
     /**
-     * returns us dividends
+     * returns us ohlcvs
      * @param asset asset
-     * @return list of dividend
+     * @param dateFrom date from
+     * @param dateTo date to
+     * @return ohlcvs
+     * @see "https://finance.yahoo.com/quote/TLT/history/?period1=1572158513&period2=1730010926"
      */
-    List<Dividend> getUsDividends(Asset asset, LocalDate dateFrom, LocalDate dateTo) {
+    List<Ohlcv> getUsOhlcvs(Asset asset, LocalDate dateFrom, LocalDate dateTo) {
         HttpHeaders headers = createYahooHeader();
 
         // url
@@ -158,54 +129,73 @@ public class DividendCollector extends AbstractCollector {
             throw new RuntimeException(e);
         }
         JsonNode resultNode = rootNode.path("chart").path("result").get(0);
-        JsonNode eventsNode = resultNode.path("events").path("dividends");
-        Map<String,Map<String,Double>> dividendsMap = objectMapper.convertValue(eventsNode, new TypeReference<>(){});
+        List<Long> timestamps = objectMapper.convertValue(resultNode.path("timestamp"), new TypeReference<>(){});
+        JsonNode quoteNode = resultNode.path("indicators").path("quote").get(0);
+        List<BigDecimal> opens = objectMapper.convertValue(quoteNode.path("open"), new TypeReference<>(){});
+        List<BigDecimal> highs = objectMapper.convertValue(quoteNode.path("high"), new TypeReference<>(){});
+        List<BigDecimal> lows = objectMapper.convertValue(quoteNode.path("low"), new TypeReference<>(){});
+        List<BigDecimal> closes = objectMapper.convertValue(quoteNode.path("close"), new TypeReference<>(){});
+        List<BigDecimal> volumes = objectMapper.convertValue(quoteNode.path("volume"), new TypeReference<>(){});
 
-        List<Dividend> dividends = new ArrayList<>();
-        for (Map.Entry<String, Map<String,Double>> entry : dividendsMap.entrySet()) {
-            Map<String,Double> value = entry.getValue();
-            LocalDate date = Instant.ofEpochSecond(value.get("date").longValue())
-                    .atOffset(ZoneOffset.UTC)
+        List<Ohlcv> ohlcvs = new ArrayList();
+        for (int i = 0; i < timestamps.size(); i ++) {
+            long timestamp = timestamps.get(i);
+            LocalDate date = Instant.ofEpochSecond(timestamp)
+                    .atZone(ZoneId.of("America/New_York"))
                     .toLocalDate();
-            BigDecimal amount = BigDecimal.valueOf(value.get("amount"));
-            Dividend dividend = Dividend.builder()
+            BigDecimal open = opens.get(i);
+            BigDecimal high = highs.get(i);
+            BigDecimal low = lows.get(i);
+            BigDecimal close = closes.get(i);
+            BigDecimal volume = volumes.get(i);
+            Ohlcv ohlcv = Ohlcv.builder()
                     .assetId(asset.getAssetId())
                     .date(date)
-                    .amount(amount)
+                    .open(open)
+                    .high(high)
+                    .low(low)
+                    .close(close)
+                    .volume(volume)
                     .build();
-            dividends.add(dividend);
+            ohlcvs.add(ohlcv);
         }
-
-        // returns
-        return dividends;
+        return ohlcvs;
     }
 
-    List<Dividend> getKrDividends(Asset asset, LocalDate dateFrom, LocalDate dateTo) {
+    /**
+     * return kr ohlcvs
+     * @param asset asset
+     * @param dateFrom date from
+     * @param dateTo date to
+     * @return ohlcvs
+     * @see "https://seibro.or.kr/websquare/control.jsp?w2xPath=/IPORTAL/user/etf/BIP_CNTS06033V.xml&menuNo=182#"
+     */
+    List<Ohlcv> getKrOhlcvs(Asset asset, LocalDate dateFrom, LocalDate dateTo) {
         String url = "https://seibro.or.kr/websquare/engine/proworks/callServletService.jsp";
-        String w2xPath = "/IPORTAL/user/etf/BIP_CNTS06030V.xml";
+        String w2xPath = "/IPORTAL/user/etf/BIP_CNTS06033V.xml";
         HttpHeaders headers = createSeibroHeaders(w2xPath);
         headers.setContentType(MediaType.APPLICATION_XML);
 
-        String action = "exerInfoDtramtPayStatPlist";
-        String task = "ksd.safe.bip.cnts.etf.process.EtfExerInfoPTask";
+        String action = "compstInfoStkDayprcList";
+        String task = "ksd.safe.bip.cnts.etf.process.EtfCompstInfoPTask";
 
         Map<String,String> secInfo = getSecInfo(asset.getSymbol());
         String isin = secInfo.get("ISIN");
 
-        List<Dividend> dividends = new ArrayList<>();
+        List<Ohlcv> ohlcvs = new ArrayList<>();
         int startPage = 1;
-        int endPage = 30;
+        int endPage = 100;
         for (int i = 0; i < 100; i ++) {
             int finalStartPage = startPage;
             int finalEndPage = endPage;
             Map<String,String> payloadMap = new LinkedHashMap<>(){{
                 put("W2XPATH", w2xPath);
-                put("MENU_NO","179");
-                put("CMM_BTN_ABBR_NM","allview,allview,print,hwp,word,pdf,searchIcon,searchIcon,seach,searchIcon,seach,link,link,wide,wide,top,");
+                put("MENU_NO","182");
+                put("CMM_BTN_ABBR_NM","allview,allview,print,hwp,word,pdf,searchIcon,seach,favorites float_left,search02,search02,link,link,wide,wide,top,");
                 put("isin", isin);
                 put("RGT_RSN_DTAIL_SORT_CD", "11");
-                put("fromRGT_STD_DT", dateFrom.format(DateTimeFormatter.BASIC_ISO_DATE));
-                put("toRGT_STD_DT", dateTo.format(DateTimeFormatter.BASIC_ISO_DATE));
+                put("fromDt", dateFrom.format(DateTimeFormatter.BASIC_ISO_DATE));
+                put("toDt", dateTo.format(DateTimeFormatter.BASIC_ISO_DATE));
                 put("START_PAGE", String.valueOf(finalStartPage));
                 put("END_PAGE", String.valueOf(finalEndPage));
             }};
@@ -219,31 +209,32 @@ public class DividendCollector extends AbstractCollector {
             String responseBody = responseEntity.getBody();
             List<Map<String, String>> rows = convertSeibroXmlToList(responseBody);
 
-            List<Dividend> dividendPage = rows.stream()
+            List<Ohlcv> ohlcvPage = rows.stream()
                     .map(row -> {
-                        return Dividend.builder()
+                        return Ohlcv.builder()
                                 .assetId(asset.getAssetId())
-                                .date(LocalDate.parse(row.get("RGT_STD_DT"), DateTimeFormatter.BASIC_ISO_DATE))
-                                .amount(new BigDecimal(row.get("ESTM_STDPRC")))
+                                .date(LocalDate.parse(row.get("STD_DT"), DateTimeFormatter.BASIC_ISO_DATE))
+                                .open(new BigDecimal(row.get("MARTP")))
+                                .high(new BigDecimal(row.get("HGPRC")))
+                                .low(new BigDecimal(row.get("LWPRC")))
+                                .close(new BigDecimal(row.get("CPRI")))
+                                .volume(new BigDecimal(row.get("TR_QTY")))
                                 .build();
                     })
                     .collect(Collectors.toList());
-            dividends.addAll(dividendPage);
+            ohlcvs.addAll(ohlcvPage);
 
             // check next page
-            if (rows.size() < 30) {
+            if (rows.size() < 100) {
                 break;
             } else {
-                startPage += 30;
-                endPage += 30;
+                startPage += 100;
+                endPage += 100;
             }
         }
 
         // returns
-        return dividends;
+        return ohlcvs;
     }
-
-
-
 
 }
