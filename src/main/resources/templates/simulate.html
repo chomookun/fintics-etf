@@ -93,6 +93,14 @@
             });
         }
 
+        function openDividendDialog(assetId) {
+            dividendDialog.open(assetId);
+        }
+
+        function openOhlcvDialog(assetId) {
+            ohlcvDialog.open(assetId);
+        }
+
         function launchSimulate() {
             _alert('TODO !!!!!!!!!!!!!!!!');
         }
@@ -225,6 +233,12 @@
                         </td>
                         <td class="text-align--right">
                             <span data-duice-bind="asset" data-duice-property="close" data-duice-format="number" class="number"></span>
+                            <small class="link"
+                                   data-duice-bind="asset"
+                                   data-duice-execute="this.dataset.assetId = asset.assetId;"
+                                   onclick="openOhlcvDialog(this.dataset.assetId);">
+                                <img class="icon" th:src="@{/static/image/icon-open.svg}" alt=""/>
+                            </small>
                         </td>
                         <td class="text-align--right">
                             <span data-duice-bind="asset" data-duice-property="volume" data-duice-format="number" class="number"></span>
@@ -238,6 +252,12 @@
                         </td>
                         <td class="text-align--center font-weight--bold">
                             <span data-duice-bind="asset" data-duice-property="dividendFrequency" class="number"></span>
+                            <small class="link"
+                                   data-duice-bind="asset"
+                                   data-duice-execute="this.dataset.assetId = asset.assetId;"
+                                   onclick="openDividendDialog(this.dataset.assetId);">
+                                <img class="icon" th:src="@{/static/image/icon-open.svg}" alt=""/>
+                            </small>
                         </td>
                         <td class="text-align--center">
                             <select data-duice-bind="asset"
@@ -353,6 +373,12 @@
                         </td>
                         <td class="text-align--right">
                             <span data-duice-bind="basketAsset" data-duice-property="close" data-duice-format="number" class="number"></span>
+                            <small class="link"
+                                   data-duice-bind="basketAsset"
+                                   data-duice-execute="this.dataset.assetId = basketAsset.assetId;"
+                                   onclick="openOhlcvDialog(this.dataset.assetId);">
+                                <img class="icon" th:src="@{/static/image/icon-open.svg}" alt=""/>
+                            </small>
                         </td>
                         <td class="text-align--right">
                             <span data-duice-bind="basketAsset" data-duice-property="volume" data-duice-format="number" class="number"></span>
@@ -363,6 +389,12 @@
                         </td>
                         <td class="text-align--center font-weight--bold">
                             <span data-duice-bind="basketAsset" data-duice-property="dividendFrequency" data-duice-format="number" class="number"></span>
+                            <small class="link"
+                                   data-duice-bind="basketAsset"
+                                   data-duice-execute="this.dataset.assetId = basketAsset.assetId;"
+                                   onclick="openDividendDialog(this.dataset.assetId);">
+                                <img class="icon" th:src="@{/static/image/icon-open.svg}" alt=""/>
+                            </small>
                         </td>
                         <td class="text-align--center">
                             <select data-duice-bind="basketAsset"
@@ -432,5 +464,179 @@
     <!-- ================================== -->
     <!-- end: assets                        -->
     <!-- ================================== -->
+
+    <!-- ================================== -->
+    <!-- start: dividend dialog             -->
+    <!-- ================================== -->
+    <dialog id="dividendDialog">
+        <style th:inline="css">
+            #dividendDialog {
+                width: 400px;
+            }
+        </style>
+        <script th:inline="javascript">
+            const dividendDialog = {
+                dialog: new duice.dialog.Dialog(document.getElementById('dividendDialog')),
+                assetId: null,
+                dividends: new duice.ArrayProxy([]),
+                open: async function(assetId) {
+                    this.assetId = assetId;
+                    duice.ArrayProxy.clear(this.dividends);
+                    await this.getDividends(0);
+                    return this.dialog.open();
+                },
+                getDividends: async function() {
+                    let url = new URL(`${_apiUrl}/v1/dividends/${this.assetId}`, document.location.origin);
+                    duice.ArrayProxy.clear(this.dividends);
+                    await _fetch(url)
+                        .then(response => {
+                            return response.json();
+                        })
+                        .then(data => {
+                            duice.ArrayProxy.clear(this.dividends);
+                            duice.ArrayProxy.assign(this.dividends, data);
+                        });
+                }
+            }
+        </script>
+        <div class="display--flex flex-direction--column padding--1em">
+            <div>
+                <h2>
+                    <img class="icon" th:src="@{/static/image/icon-dividend.svg}" alt=""/>
+                    <span data-th-text="#{fintics.etf.Dividend}"></span>
+                </h2>
+            </div>
+            <div class="display--flex flex-direction--column gap--1em padding--1em">
+                <div class="overflow-y--scroll" style="height:400px;">
+                    <table class="width--100">
+                        <colgroup>
+                            <col/>
+                            <col/>
+                        </colgroup>
+                        <thead>
+                        <tr>
+                            <th data-th-text="#{fintics.etf.Dividend.date}"></th>
+                            <th data-th-text="#{fintics.etf.Dividend.amount}" class="text-align--center"></th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr data-duice-bind="dividendDialog.dividends" data-duice-loop="dividend,status">
+                            <td>
+                                <span data-duice-bind="dividend" data-duice-property="date" class="date"></span>
+                            </td>
+                            <td class="text-align--center">
+                                <span data-duice-bind="dividend" data-duice-property="amount" data-duice-format="number" class="number"></span>
+                            </td>
+                        </tr>
+                        <tr data-duice-bind="dividendDialog.dividends"
+                            data-duice-if="return dividendDialog.dividends.length < 1;" hidden>
+                            <td colspan="100%" class="text-align--center font-size--smaller">No Data</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </dialog>
+    <!-- ====================================== -->
+    <!-- end: dividend dialog                   -->
+    <!-- ====================================== -->
+
+    <!-- ================================== -->
+    <!-- start: ohlcv dialog                -->
+    <!-- ================================== -->
+    <dialog id="ohlcvDialog">
+        <style th:inline="css">
+            #ohlcvDialog {
+                width: 1000px;
+            }
+        </style>
+        <script th:inline="javascript">
+            const ohlcvDialog = {
+                dialog: new duice.dialog.Dialog(document.getElementById('ohlcvDialog')),
+                assetId: null,
+                ohlcvs: new duice.ArrayProxy([]),
+                open: async function(assetId) {
+                    this.assetId = assetId;
+                    duice.ArrayProxy.clear(this.ohlcvs);
+                    await this.getOhlcvs();
+                    return this.dialog.open();
+                },
+                getOhlcvs: async function() {
+                    let url = new URL(`${_apiUrl}/v1/ohlcvs/${this.assetId}`, document.location.origin);
+                    duice.ArrayProxy.clear(this.ohlcvs);
+                    await _fetch(url)
+                        .then(response => {
+                            return response.json();
+                        })
+                        .then(data => {
+                            duice.ArrayProxy.clear(this.ohlcvs);
+                            duice.ArrayProxy.assign(this.ohlcvs, data);
+                        });
+                }
+            }
+        </script>
+        <div class="display--flex flex-direction--column padding--1em">
+            <div>
+                <h2>
+                    <img class="icon" th:src="@{/static/image/icon-dividend.svg}" alt=""/>
+                    <span data-th-text="#{fintics.etf.Dividend}"></span>
+                </h2>
+            </div>
+            <div class="display--flex flex-direction--column gap--1em padding--1em">
+                <div class="overflow-y--scroll" style="height:400px;">
+                    <table class="width--100">
+                        <colgroup>
+                            <col/>
+                            <col/>
+                            <col/>
+                            <col/>
+                            <col/>
+                            <col/>
+                        </colgroup>
+                        <thead>
+                        <tr>
+                            <th data-th-text="#{fintics.etf.Ohlcv.date}"></th>
+                            <th data-th-text="#{fintics.etf.Ohlcv.open}"></th>
+                            <th data-th-text="#{fintics.etf.Ohlcv.high}"></th>
+                            <th data-th-text="#{fintics.etf.Ohlcv.low}"></th>
+                            <th data-th-text="#{fintics.etf.Ohlcv.close}"></th>
+                            <th data-th-text="#{fintics.etf.Ohlcv.volume}"></th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr data-duice-bind="ohlcvDialog.ohlcvs" data-duice-loop="ohlcv,status">
+                            <td>
+                                <span data-duice-bind="ohlcv" data-duice-property="date" class="date"></span>
+                            </td>
+                            <td class="text-align--center">
+                                <span data-duice-bind="ohlcv" data-duice-property="open" data-duice-format="number" class="number"></span>
+                            </td>
+                            <td class="text-align--center">
+                                <span data-duice-bind="ohlcv" data-duice-property="high" data-duice-format="number" class="number"></span>
+                            </td>
+                            <td class="text-align--center">
+                                <span data-duice-bind="ohlcv" data-duice-property="low" data-duice-format="number" class="number"></span>
+                            </td>
+                            <td class="text-align--center">
+                                <span data-duice-bind="ohlcv" data-duice-property="close" data-duice-format="number" class="number"></span>
+                            </td>
+                            <td class="text-align--center">
+                                <span data-duice-bind="ohlcv" data-duice-property="volume" data-duice-format="number" class="number"></span>
+                            </td>
+                        </tr>
+                        <tr data-duice-bind="dividendDialog.dividends"
+                            data-duice-if="return dividendDialog.dividends.length < 1;" hidden>
+                            <td colspan="100%" class="text-align--center font-size--smaller">No Data</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </dialog>
+    <!-- ====================================== -->
+    <!-- end: ohlcv dialog                      -->
+    <!-- ====================================== -->
 
 </th:block>
