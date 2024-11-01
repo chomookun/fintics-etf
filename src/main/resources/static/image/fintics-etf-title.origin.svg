@@ -2,13 +2,13 @@
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
 
 <svg
-   width="100"
+   width="146"
    height="24"
-   viewBox="0 0 29.58993 7.1015833"
+   viewBox="0 0 43.201284 7.1015833"
    version="1.1"
    id="svg1"
    inkscape:version="1.4 (e7c3feb1, 2024-10-09)"
-   sodipodi:docname="fintics-title.origin.svg"
+   sodipodi:docname="fintics-etf-title.origin.svg"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns="http://www.w3.org/2000/svg"
@@ -24,8 +24,8 @@
      inkscape:deskcolor="#d1d1d1"
      inkscape:document-units="px"
      inkscape:zoom="5.6568542"
-     inkscape:cx="56.21499"
-     inkscape:cy="6.8942912"
+     inkscape:cx="74.157824"
+     inkscape:cy="31.996582"
      inkscape:window-width="1680"
      inkscape:window-height="997"
      inkscape:window-x="0"
@@ -48,7 +48,7 @@
          sodipodi:role="line"
          id="tspan1"
          x="3.4232464"
-         y="9.4571924">FINTICS</tspan></text>
+         y="9.4571924">FINTICS.ETF</tspan></text>
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:1.57813px;font-family:'04b_09';-inkscape-font-specification:'04b_09, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:start;writing-mode:lr-tb;direction:ltr;text-anchor:start;fill:#000000;stroke-width:0.264583"

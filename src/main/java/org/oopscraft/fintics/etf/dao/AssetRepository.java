@@ -1,12 +1,13 @@
 package org.oopscraft.fintics.etf.dao;
 
 import org.oopscraft.fintics.etf.model.AssetSearch;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.*;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
+
+import java.util.List;
 
 @Repository
 public interface AssetRepository extends JpaRepository<AssetEntity,String>, JpaSpecificationExecutor<AssetEntity> {
@@ -43,8 +44,17 @@ public interface AssetRepository extends JpaRepository<AssetEntity,String>, JpaS
                     criteriaBuilder.lessThanOrEqualTo(root.get(AssetEntity_.DIVIDEND_FREQUENCY), assetSearch.getDividendFrequencyMax()));
         }
 
-        // returns
-        return findAll(specification, pageable);
+        // default sort
+        Sort sort = Sort.by(AssetEntity_.MARKET_CAP).descending();
+
+        // find
+        if (pageable.isPaged()) {
+            pageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sort);
+            return findAll(specification, pageable);
+        } else {
+            List<AssetEntity> assetEntities = findAll(specification, sort);
+            return new PageImpl<>(assetEntities, pageable, assetEntities.size());
+        }
     }
 
 }

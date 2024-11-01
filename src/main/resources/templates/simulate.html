@@ -8,6 +8,7 @@
         // defines
         const assetSearch = new duice.ObjectProxy({
             market: 'KR',
+            dividendYieldMin: null,
             dividendFrequencyMin: null,
             key: 'name',
             value: null,
@@ -18,10 +19,10 @@
         });
         const assets = new duice.ArrayProxy([]);
         const simulate = new duice.ObjectProxy({
-            assets: [],
+            basketAssets: [],
             investAmount: 1000,
-            dateFrom: null,
-            dateTo: null
+            dateFrom: dateFns.format(dateFns.subYears(new Date(),1), 'YYYY-MM-DD'),
+            dateTo: dateFns.format(dateFns.subDays(new Date(),1), 'YYYY-MM-DD')
         });
 
         /**
@@ -29,12 +30,13 @@
          * @param page page number
          */
         function getAssets(page) {
-            if(page) {
-                assetSearch._page = page;
-            }
+            assetSearch._page = page | 0;
             let url = new URL(`${_apiUrl}/v1/assets`, document.location.origin);
             if (assetSearch.market != null) {
                 url.searchParams.append('market', assetSearch.market);
+            }
+            if (assetSearch.dividendYieldMin != null) {
+                url.searchParams.append('dividendYieldMin', assetSearch.dividendYieldMin);
             }
             if (assetSearch.dividendFrequencyMin != null) {
                 url.searchParams.append('dividendFrequencyMin', assetSearch.dividendFrequencyMin);
@@ -52,6 +54,14 @@
                     return response.json()
                 })
                 .then(data => {
+                    // checks already selected
+                    data.forEach(asset => {
+                        const exist = simulate.basketAssets.some(it => it.assetId === asset.assetId);
+                        if (exist) {
+                            asset._selected = true;
+                        }
+                    });
+                    // assigns
                     duice.ArrayProxy.assign(assets, data);
                 })
                 .finally(() => {
@@ -69,7 +79,22 @@
 
         function addBasketAsset(index) {
             let basketAsset = JSON.parse(JSON.stringify(assets[index]));
-            basket.basketAssets.push(basketAsset);
+            simulate.basketAssets.push(basketAsset);
+            assets[index]._selected = true;
+        }
+
+        function removeBasketAsset(index) {
+            const assetId = simulate.basketAssets[index].assetId;
+            simulate.basketAssets.splice(index, 1);
+            assets.forEach(it => {
+                if (it.assetId === assetId) {
+                    it._selected = false;
+                }
+            });
+        }
+
+        function launchSimulate() {
+            _alert('TODO !!!!!!!!!!!!!!!!');
         }
 
         // DOM content loaded listener
@@ -82,8 +107,8 @@
     <!-- start: title                           -->
     <!-- ====================================== -->
     <h1 id="title">
-        <img class="icon" th:src="@{/static/image/icon-asset.svg}" alt="asset"/>
-        <span data-th-text="#{fintics.etf.Asset}"></span>
+        <img class="icon" th:src="@{/static/image/icon-simulate.svg}" alt="asset"/>
+        <span data-th-text="|ETF #{fintics.etf.Simulate}|"></span>
     </h1>
     <!-- ====================================== -->
     <!-- end: title                             -->
@@ -94,26 +119,34 @@
     <!-- ================================== -->
     <div class="display--flex flex-direction--column border--1 padding--1em">
         <!-- start asset -->
-        <div>
+        <div class="display--flex flex-direction--column gap--1em padding--1em s__padding-y--0">
             <h2>
                 <img class="icon" th:src="@{/static/image/icon-asset.svg}" alt="asset"/>
-                <span data-th-text="#{fintics.etf.Asset} + ' ' + #{web.global.search}"></span>
+                <span data-th-text="|ETF #{web.global.search}|"></span>
             </h2>
-        </div>
-        <div class="display--flex flex-direction--column gap--1em padding--1em s__padding-y--0">
             <form onsubmit="return false;" class="display--grid grid-template-columns--12 grid-gap--1em">
                 <label class="grid-column--1 s__grid-column--12">
                     <select data-duice-bind="assetSearch" data-duice-property="market" class="width--100">
-                        <option value="KR">국내</option>
-                        <option value="US">미국</option>
+                        <option value="KR" data-th-text="#{fintics.etf.Asset.market.KR}"></option>
+                        <option value="US" data-th-text="#{fintics.etf.Asset.market.US}"></option>
                     </select>
                 </label>
-                <label class="grid-column--1 s__grid-column--6">
+                <label class="grid-column--2 s__grid-column--6">
+                    <select class="width--100" data-duice-bind="assetSearch" data-duice-property="dividendYieldMin">
+                        <option value="" data-th-text="|#{fintics.etf.Asset.dividendYield}...|"></option>
+                        <option value="1">1%+ more</option>
+                        <option value="3">3%+ more</option>
+                        <option value="5">5%+ more</option>
+                        <option value="7">7%+ more</option>
+                        <option value="10">10%+ more</option>
+                    </select>
+                </label>
+                <label class="grid-column--2 s__grid-column--6">
                     <select class="width--100" data-duice-bind="assetSearch" data-duice-property="dividendFrequencyMin">
-                        <option value="">- 배당주기 -</option>
-                        <option value="1">연 1회 이상</option>
-                        <option value="4">연 4회 이상</option>
-                        <option value="12">연 12회 이상</option>
+                        <option value="" data-th-text="|#{fintics.etf.Asset.dividendFrequency}...|"></option>
+                        <option value="1">1+ times</option>
+                        <option value="4">4+ times</option>
+                        <option value="12">12+ times</option>
                     </select>
                 </label>
                 <label class="grid-column--1 s__grid-column--6">
@@ -122,11 +155,11 @@
                         <option value="assetId" th:text="#{fintics.etf.Asset.assetId}"></option>
                     </select>
                 </label>
-                <label class="grid-column--3 s__grid-column--6">
+                <label class="grid-column--2 s__grid-column--6">
                     <input class="width--100" type="text" data-duice-bind="assetSearch" data-duice-property="value"/>
                 </label>
-                <div class="grid-column--6 s__grid-column--12 justify-self--end">
-                    <button type="submit" onclick="getAssets();">
+                <div class="grid-column--4 s__grid-column--12 justify-self--end">
+                    <button type="submit" onclick="getAssets(0);">
                         <img class="icon" th:src="@{/static/image/icon-search.svg}" alt="search"/>
                         <span data-th-text="#{web.global.search}"></span>
                     </button>
@@ -145,15 +178,19 @@
                         <col style="width:5em;"/>
                         <col/>
                         <col/>
+                        <col/>
+                        <col/>
                         <col style="width:10em;"/>
                         <col style="width:10em;"/>
                     </colgroup>
                     <thead>
-                    <tr>
+                    <tr style="height:4em;">
                         <th></th>
                         <th data-th-text="#{fintics.etf.Asset.symbol}" class="text-align--center"></th>
                         <th data-th-text="#{fintics.etf.Asset.name}"></th>
                         <th data-th-text="#{fintics.etf.Asset.market}"></th>
+                        <th data-th-text="#{fintics.etf.Asset.close}" class="text-align--right"></th>
+                        <th data-th-text="#{fintics.etf.Asset.volume}" class="text-align--right"></th>
                         <th data-th-text="#{fintics.etf.Asset.marketCap}" class="text-align--right"></th>
                         <th data-th-text="#{fintics.etf.Asset.dividendYield}" class="text-align--right"></th>
                         <th data-th-text="#{fintics.etf.Asset.dividendFrequency}" class="text-align--center"></th>
@@ -161,11 +198,16 @@
                     </tr>
                     </thead>
                     <tbody>
-                    <tr data-duice-bind="assets" data-duice-loop="asset,status">
+                    <tr data-duice-bind="assets" data-duice-loop="asset,status" style="height:4em;">
                         <td class="text-align--center">
                             <button type="button" class="small"
                                     data-duice-bind="asset"
-                                    data-duice-execute="this.dataset.index=status.index;"
+                                    data-duice-execute="
+                                    this.dataset.index=status.index;
+                                    if (asset._selected) {
+                                        this.disabled = true;
+                                    }
+                                    "
                                     onclick="addBasketAsset(this.dataset.index);">
                                 <img class="icon" th:src="@{/static/image/icon-add.svg}" alt="add"/>
                             </button>
@@ -182,14 +224,20 @@
                             <span data-duice-bind="asset" data-duice-property="market" class="badge code"></span>
                         </td>
                         <td class="text-align--right">
-                            <span data-duice-bind="asset" data-duice-property="marketCap" data-duice-format="number" class="number"></span>
+                            <span data-duice-bind="asset" data-duice-property="close" data-duice-format="number" class="number"></span>
                         </td>
                         <td class="text-align--right">
+                            <span data-duice-bind="asset" data-duice-property="volume" data-duice-format="number" class="number"></span>
+                        </td>
+                        <td class="text-align--right">
+                            <span data-duice-bind="asset" data-duice-property="marketCap" data-duice-format="number" class="number"></span>
+                        </td>
+                        <td class="text-align--right font-weight--bold">
                             <span data-duice-bind="asset" data-duice-property="dividendYield" data-duice-format="number" class="number"></span>
                             <small class="code">%</small>
                         </td>
-                        <td class="text-align--center">
-                            <span data-duice-bind="asset" data-duice-property="dividendFrequency" class="badge code"></span>
+                        <td class="text-align--center font-weight--bold">
+                            <span data-duice-bind="asset" data-duice-property="dividendFrequency" class="number"></span>
                         </td>
                         <td class="text-align--center">
                             <select data-duice-bind="asset"
@@ -203,13 +251,15 @@
                         </td>
                     </tr>
                     <tr data-duice-bind="assetSearch"
-                        data-duice-if="return assetSearch._status === 'loading';">
+                        data-duice-if="return assetSearch._status === 'loading';"
+                        style="height:4em;">
                         <td colspan="100%" class="text-align--center">
                             <img class="icon font-size--larger" th:src="@{/static/image/loading.svg}" alt="loading"/>
                         </td>
                     </tr>
                     <tr data-duice-bind="assetSearch"
-                        data-duice-if="return assetSearch._status === 'completed' && assets.length < 1;" hidden>
+                        data-duice-if="return assetSearch._status === 'completed' && assets.length < 1;"
+                        style="height:4em;" hidden>
                         <td colspan="100%" class="text-align--center">
                             <span data-th-text="#{web.global.itemNotFound(#{fintics.etf.Asset})}"></span>
                         </td>
@@ -226,7 +276,8 @@
                             data-duice-size-property="_size"
                             data-duice-page-property="_page"
                             data-duice-count-property="_count"
-                            data-duice-onclick="getAssets(this.dataset.page);">
+                            data-duice-onclick="getAssets(this.dataset.page);"
+                            class="number">
                     </duice-pagination>
                 </div>
                 <div class="text-align--right">
@@ -236,15 +287,16 @@
                 </div>
             </div>
         </div>
-        <!-- end asset -->
+        <!-- end asset asset -->
         <!-- start simulate -->
-        <div>
-            <h2>
-                <img class="icon" th:src="@{/static/image/icon-basket.svg}" alt="asset"/>
-                <span data-th-text="#{fintics.etf.Basket}"></span>
-            </h2>
-        </div>
         <div class="display--flex flex-direction--column gap--1em padding--1em s__padding-y--0">
+            <h2>
+                <img class="icon" th:src="@{/static/image/icon-simulate.svg}" alt="simulate"/>
+                <span data-th-text="|#{fintics.etf.Simulate}|"></span>
+            </h2>
+            <div>
+                <span data-th-text="#{fintics.etf.BasketAsset}" class="font-weight--bold tag-required"></span>
+            </div>
             <div class="overflow-x--scroll">
                 <table class="width--100">
                     <colgroup>
@@ -261,7 +313,7 @@
                         <col style="width:10em;"/>
                     </colgroup>
                     <thead>
-                    <tr>
+                    <tr style="height:4em;">
                         <th></th>
                         <th data-th-text="#{fintics.etf.Asset.symbol}" class="text-align--center"></th>
                         <th data-th-text="#{fintics.etf.Asset.name}"></th>
@@ -276,7 +328,7 @@
                     </tr>
                     </thead>
                     <tbody>
-                    <tr data-duice-bind="basket.basketAssets" data-duice-loop="basketAsset,status">
+                    <tr data-duice-bind="simulate.basketAssets" data-duice-loop="basketAsset,status" style="height:4em;">
                         <td class="text-align--center">
                             <button type="button" class="small"
                                     data-duice-bind="basketAsset"
@@ -305,19 +357,21 @@
                         <td class="text-align--right">
                             <span data-duice-bind="basketAsset" data-duice-property="volume" data-duice-format="number" class="number"></span>
                         </td>
-                        <td class="text-align--right">
+                        <td class="text-align--right font-weight--bold">
                             <span data-duice-bind="basketAsset" data-duice-property="dividendYield" data-duice-format="number" class="number"></span>
+                            <small class="code">%</small>
                         </td>
-                        <td class="text-align--center">
-                            <span data-duice-bind="basketAsset" data-duice-property="dividendFrequency" class="badge"></span>
+                        <td class="text-align--center font-weight--bold">
+                            <span data-duice-bind="basketAsset" data-duice-property="dividendFrequency" data-duice-format="number" class="number"></span>
                         </td>
                         <td class="text-align--center">
                             <select data-duice-bind="basketAsset"
                                     data-duice-option="basketAsset.links"
                                     data-duice-option-value-property="url"
                                     data-duice-option-text-property="name"
-                                    onchange="_openLink(this.value, '_blank'); this.value = '';">
-                                <option value>- Link -</option>
+                                    onchange="_openLink(this.value, '_blank'); this.value = '';"
+                                    class="code font-size--smaller">
+                                <option value>Link...</option>
                             </select>
                         </td>
                         <td class="text-align--right">
@@ -331,8 +385,10 @@
                             </label>
                         </td>
                     </tr>
-                    <tr data-duice-bind="basket"
-                        data-duice-if="return basket.basketAssets.length < 1;" hidden>
+                    <tr data-duice-bind="simulate"
+                        data-duice-if="return simulate.basketAssets.length < 1;"
+                        style="height:4em;"
+                        hidden>
                         <td colspan="100%" class="text-align--center">
                             <span data-th-text="#{web.global.itemNotFound(#{fintics.etf.Asset})}"></span>
                         </td>
@@ -341,38 +397,40 @@
                 </table>
             </div>
         </div>
-        <!-- end basket -->
-        <!-- start etc -->
-        <form class="display--grid grid-template-columns--12 grid-gap--1em grid-column-gap--2em">
-            <label class="grid-column--6">
+        <!-- end basket asset -->
+        <!-- start simulate etc -->
+        <form class="display--grid grid-template-columns--12 grid-gap--1em grid-column-gap--2em padding--1em">
+            <label class="grid-column--4">
                 <span data-th-text="#{fintics.etf.Simulate.investAmount}" class="font-weight--bold tag-required"></span>
-                <input type="text" data-duice-bind="simulate" data-duice-property="investAmount"
-                       class="width--100 font-weight--bold"/>
+                <input type="text"
+                       data-duice-bind="simulate"
+                       data-duice-property="investAmount"
+                       data-duice-format="number"
+                       class="width--100 text-align--right font-weight--bold"/>
             </label>
-            <label class="grid-column--6">
-                <span data-th-text="#{fintics.Trade.enabled}" class="font-weight--bold tag-required"></span>
-                <br/>
-                <input type="checkbox" data-duice-bind="trade" data-duice-property="enabled"/>
+            <label class="grid-column--4">
+                <span data-th-text="#{fintics.etf.Simulate.dateFrom}" class="font-weight--bold tag-required"></span>
+                <input type="date" class="width--100 date"
+                       data-duice-bind="simulate"
+                       data-duice-property="dateFrom"/>
+            </label>
+            <label class="grid-column--4">
+                <span data-th-text="#{fintics.etf.Simulate.dateTo}" class="font-weight--bold tag-required"></span>
+                <input type="date" class="width--100 date"
+                        data-duice-bind="simulate"
+                        data-duice-property="dateTo"/>
             </label>
         </form>
-        <!-- end etc -->
-    </div>
-    <!-- ================================== -->
-    <!-- end: assets                        -->
-    <!-- ================================== -->
-
-    <br/>
-
-    <!-- ================================== -->
-    <!-- start: basket                      -->
-    <!-- ================================== -->
-    <div class="display--flex flex-direction--column border--1 padding--1em">
-        <div class="display--flex flex-direction--column gap--1em padding--1em s__padding-y--0">
-
+        <!-- end simulate etc -->
+        <div class="text-align--center padding--1em">
+            <button type="button" onclick="launchSimulate();">
+                <img class="icon" th:src="@{/static/image/icon-confirm.svg}" alt="save"/>
+                <span data-th-text="#{web.global.confirm}"></span>
+            </button>
         </div>
     </div>
     <!-- ================================== -->
-    <!-- start: basket                      -->
+    <!-- end: assets                        -->
     <!-- ================================== -->
 
 </th:block>

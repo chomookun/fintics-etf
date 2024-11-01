@@ -32,7 +32,7 @@ public class AssetRestController {
 
     @GetMapping
     public ResponseEntity<List<AssetResponse>> getAssets(
-            @RequestParam(value = "asset_id", required = false) String assetId,
+            @RequestParam(value = "assetId", required = false) String assetId,
             @RequestParam(value = "name", required = false) String name,
             @RequestParam(value = "market", required = false) String market,
             @RequestParam(value = "dividendYieldMin", required = false) BigDecimal dividendYieldMin,

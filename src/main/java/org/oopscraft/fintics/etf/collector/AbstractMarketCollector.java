@@ -54,6 +54,14 @@ public abstract class AbstractMarketCollector {
         List<Asset> assets = getAssets();
         for (Asset asset : assets) {
             try {
+                // check updated today
+                AssetEntity assetEntity = assetRepository.findById(asset.getAssetId()).orElse(null);
+                if (assetEntity != null) {
+                    if (assetEntity.getUpdatedDate() != null && assetEntity.getUpdatedDate().isEqual(LocalDate.now())) {
+                        continue;
+                    }
+                }
+
                 // saves asset
                 sleep(3_000);
                 Map<String,String> assetDetail = getAssetDetail(asset);
@@ -97,8 +105,6 @@ public abstract class AbstractMarketCollector {
 
             } catch (Throwable t) {
                 log.warn(t.getMessage());
-            } finally {
-                sleep(10_000);
             }
         }
     }

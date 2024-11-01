@@ -22,9 +22,9 @@ spring:
 
 # web
 web:
-  brand: <span><img src="/static/image/fintics-emp-icon.svg"/><img src="/static/image/fintics-emp-title.svg"/></span>
+  brand: <span><img src="/static/image/fintics-etf-icon.svg"/><img src="/static/image/fintics-etf-title.svg"/></span>
   favicon: /static/image/fintics-icon.svg
   title: Fintics EMP
-  index: simulate
+  index: /simulate
   security-policy: ANONYMOUS
 
