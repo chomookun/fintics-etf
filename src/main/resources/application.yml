@@ -24,7 +24,7 @@ spring:
 web:
   brand: <span><img src="/static/image/fintics-etf-icon.svg"/><img src="/static/image/fintics-etf-title.svg"/></span>
   favicon: /static/image/fintics-icon.svg
-  title: Fintics EMP
+  title: Fintics ETF
   index: /simulate
   security-policy: ANONYMOUS
 
