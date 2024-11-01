@@ -26,10 +26,23 @@ public interface AssetRepository extends JpaRepository<AssetEntity,String>, JpaS
             specification = specification.and((root, query, criteriaBuilder) ->
                     criteriaBuilder.equal(root.get(AssetEntity_.MARKET), assetSearch.getMarket()));
         }
-        if (assetSearch.getDividendFrequency() != null) {
+        if (assetSearch.getDividendYieldMin() != null) {
             specification = specification.and((root, query, criteriaBuilder) ->
-                    criteriaBuilder.equal(root.get(AssetEntity_.DIVIDEND_FREQUENCY), assetSearch.getDividendFrequency()));
+                    criteriaBuilder.greaterThanOrEqualTo(root.get(AssetEntity_.DIVIDEND_YIELD), assetSearch.getDividendYieldMin()));
         }
+        if (assetSearch.getDividendYieldMax() != null) {
+            specification = specification.and((root, query, criteriaBuilder) ->
+                    criteriaBuilder.lessThanOrEqualTo(root.get(AssetEntity_.DIVIDEND_YIELD), assetSearch.getDividendYieldMax()));
+        }
+        if (assetSearch.getDividendFrequencyMin() != null) {
+            specification = specification.and((root, query, criteriaBuilder) ->
+                    criteriaBuilder.greaterThanOrEqualTo(root.get(AssetEntity_.DIVIDEND_FREQUENCY), assetSearch.getDividendFrequencyMin()));
+        }
+        if (assetSearch.getDividendFrequencyMax() != null) {
+            specification = specification.and((root, query, criteriaBuilder) ->
+                    criteriaBuilder.lessThanOrEqualTo(root.get(AssetEntity_.DIVIDEND_FREQUENCY), assetSearch.getDividendFrequencyMax()));
+        }
+
         // returns
         return findAll(specification, pageable);
     }

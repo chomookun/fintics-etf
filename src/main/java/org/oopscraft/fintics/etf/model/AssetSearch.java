@@ -1,8 +1,9 @@
 package org.oopscraft.fintics.etf.model;
 
 import lombok.Builder;
-import lombok.Data;
 import lombok.Getter;
+
+import java.math.BigDecimal;
 
 @Builder
 @Getter
@@ -14,6 +15,12 @@ public class AssetSearch {
 
     private String market;
 
-    private String dividendFrequency;
+    private BigDecimal dividendYieldMin;
+
+    private BigDecimal dividendYieldMax;
+
+    private Integer dividendFrequencyMin;
+
+    private Integer dividendFrequencyMax;
 
 }
