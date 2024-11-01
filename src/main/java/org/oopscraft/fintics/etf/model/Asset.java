@@ -27,6 +27,10 @@ public class Asset {
 
     private LocalDate updatedDate;
 
+    private BigDecimal close;
+
+    private BigDecimal volume;
+
     private BigDecimal marketCap;
 
     private BigDecimal dividendYield;
@@ -52,6 +56,8 @@ public class Asset {
                 .market(assetEntity.getMarket())
                 .exchange(assetEntity.getExchange())
                 .updatedDate(assetEntity.getUpdatedDate())
+                .close(assetEntity.getClose())
+                .volume(assetEntity.getVolume())
                 .marketCap(assetEntity.getMarketCap())
                 .dividendYield(assetEntity.getDividendYield())
                 .dividendFrequency(assetEntity.getDividendFrequency())

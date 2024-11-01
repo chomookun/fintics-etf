@@ -14,6 +14,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -36,6 +37,20 @@ class UsMarketCollectorTest extends CoreTestSupport {
         List<Asset> assets = usMarketCollector.getAssets();
         // then
         log.info("assets:{}", assets);
+    }
+
+    @Disabled
+    @Test
+    void getAssetDetail() {
+        // given
+        Asset asset = Asset.builder()
+                .assetId("US.SPY")
+                .name("SPDR S&P 500")
+                .build();
+        // when
+        Map<String,String> assetDetail = usMarketCollector.getAssetDetail(asset);
+        // then
+        log.info("assetDetail:{}", assetDetail);
     }
 
     @Disabled

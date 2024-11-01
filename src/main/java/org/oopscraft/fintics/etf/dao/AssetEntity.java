@@ -38,6 +38,12 @@ public class AssetEntity extends BaseEntity {
     @Column(name = "updated_date")
     private LocalDate updatedDate;
 
+    @Column(name = "close", scale = 4)
+    private BigDecimal close;
+
+    @Column(name = "volume")
+    private BigDecimal volume;
+
     @Column(name = "market_cap")
     private BigDecimal marketCap;
 

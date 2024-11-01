@@ -97,23 +97,71 @@ public class KrMarketCollector extends AbstractMarketCollector {
         // convert assets
         return rows.stream()
                 .map(row -> {
+                    BigDecimal close = new BigDecimal(row.get("CPRI"));
+                    BigDecimal volume = new BigDecimal(row.get("TR_QTY"));
                     // market cap (etf is 1 krw unit)
                     BigDecimal marketCap = toNumber(row.get("NETASST_TOTAMT"), null);
                     if(marketCap != null) {
                         marketCap = marketCap.divide(BigDecimal.valueOf(100_000_000), MathContext.DECIMAL32)
                                 .setScale(0, RoundingMode.HALF_UP);
                     }
-
                     // return
                     return Asset.builder()
                             .assetId(toAssetId("KR", row.get("SHOTN_ISIN")))
                             .name(row.get("KOR_SECN_NM"))
                             .market("KR")
                             .exchange("XRKX")
+                            .updatedDate(LocalDate.now())
+                            .close(close)
+                            .volume(volume)
                             .marketCap(marketCap)
                             .build();
                 })
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    Map<String, String> getAssetDetail(Asset asset) {
+        Map<String, String> assetDetail = new LinkedHashMap<>();
+        // close (목록 조회 시 종가 있음)
+        BigDecimal close = asset.getClose();
+        assetDetail.put("close", Optional.ofNullable(close)
+                .map(BigDecimal::toPlainString)
+                .orElse(null));
+
+        // volume (목록 조회 시 거래량 있음)
+        BigDecimal volume = asset.getVolume();
+        assetDetail.put("volume", Optional.ofNullable(volume)
+                .map(BigDecimal::toPlainString)
+                .orElse(null));
+
+        // market cap (목록 조회 시 시총 있음)
+        BigDecimal marketCap = asset.getMarketCap();
+        assetDetail.put("marketCap", Optional.ofNullable(marketCap)
+                .map(BigDecimal::toPlainString)
+                .orElse(null));
+
+        // dividends
+        BigDecimal dividendYield = BigDecimal.ZERO;
+        int dividendFrequency = 0;
+        LocalDate dateFrom = LocalDate.now().minusYears(1);
+        LocalDate dateTo = LocalDate.now().minusDays(1);
+        List<Dividend> dividends = getDividends(asset, dateFrom, dateTo);
+        if (dividends.size() > 0) {
+            // dividend yield
+            dividendYield = dividends.stream()
+                    .map(Dividend::getAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add)
+                    .divide(close, MathContext.DECIMAL32)
+                    .multiply(BigDecimal.valueOf(100))
+                    .setScale(2, RoundingMode.DOWN);
+            dividendFrequency = dividends.size();
+        }
+        assetDetail.put("dividendYield", dividendYield.toPlainString());
+        assetDetail.put("dividendFrequency", String.valueOf(dividendFrequency));
+
+        // returns
+        return assetDetail;
     }
 
     @Override

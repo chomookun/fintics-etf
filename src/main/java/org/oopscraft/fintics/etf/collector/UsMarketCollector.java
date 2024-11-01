@@ -24,10 +24,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Component
@@ -90,6 +87,79 @@ public class UsMarketCollector extends AbstractMarketCollector {
 
         // return
         return assets;
+    }
+
+    @Override
+    Map<String, String> getAssetDetail(Asset asset) {
+        BigDecimal close = null;
+        BigDecimal volume = null;
+        BigDecimal marketCap = null;
+        BigDecimal dividendYield = null;
+        Integer dividendFrequency = null;
+
+        // calls summary api
+        HttpHeaders headers = createNasdaqHeaders();
+        String summaryUrl = String.format(
+                "https://api.nasdaq.com/api/quote/%s/summary?assetclass=etf",
+                asset.getSymbol()
+        );
+        RequestEntity<Void> summaryRequestEntity = RequestEntity.get(summaryUrl)
+                .headers(headers)
+                .build();
+        ResponseEntity<String> summaryResponseEntity = getRestTemplate().exchange(summaryRequestEntity, String.class);
+        JsonNode summaryRootNode;
+        try {
+            summaryRootNode = objectMapper.readTree(summaryResponseEntity.getBody());
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+        JsonNode summaryDataNode = summaryRootNode.path("data").path("summaryData");
+        HashMap<String, Map<String,String>> summaryDataMap = objectMapper.convertValue(summaryDataNode, new TypeReference<>() {});
+
+        // price, market cap
+        for(String name : summaryDataMap.keySet()) {
+            Map<String, String> map = summaryDataMap.get(name);
+            String value = map.get("value");
+            if (Objects.equals(name, "PreviousClose")) {
+                close = convertCurrencyToNumber(value, Currency.getInstance("USD"));
+            }
+            if (Objects.equals(name, "AvgDailyVol20Days")) {
+                volume = convertStringToNumber(value);
+            }
+            if (Objects.equals(name, "MarketCap")) {
+                marketCap = convertStringToNumber(value);
+            }
+            if (Objects.equals(name, "Yield")) {
+                dividendYield = convertPercentageToNumber(value);
+            }
+        }
+
+        // dividend frequency
+        LocalDate dateFrom = LocalDate.now().minusYears(1);
+        LocalDate dateTo = LocalDate.now().minusDays(1);
+        List<Dividend> dividends = getDividends(asset, dateFrom, dateTo);
+        if (dividends.size() > 0) {
+            dividendFrequency = dividends.size();
+        }
+
+        // return
+        Map<String,String> assetDetail = new LinkedHashMap<>();
+        assetDetail.put("close", Optional.ofNullable(close)
+                .map(BigDecimal::toPlainString)
+                .orElse(null));
+        assetDetail.put("volume", Optional.ofNullable(volume)
+                .map(BigDecimal::toPlainString)
+                .orElse(null));
+        assetDetail.put("marketCap", Optional.ofNullable(marketCap)
+                .map(BigDecimal::toPlainString)
+                .orElse(null));
+        assetDetail.put("dividendYield", Optional.ofNullable(dividendYield)
+                .map(BigDecimal::toPlainString)
+                .orElse(null));
+        assetDetail.put("dividendFrequency", Optional.ofNullable(dividendFrequency)
+                .map(String::valueOf)
+                .orElse(null));
+        return assetDetail;
     }
 
     /**
@@ -160,18 +230,20 @@ public class UsMarketCollector extends AbstractMarketCollector {
         Map<String,Map<String,Double>> dividendsMap = objectMapper.convertValue(eventsNode, new TypeReference<>(){});
 
         List<Dividend> dividends = new ArrayList<>();
-        for (Map.Entry<String, Map<String,Double>> entry : dividendsMap.entrySet()) {
-            Map<String,Double> value = entry.getValue();
-            LocalDate date = Instant.ofEpochSecond(value.get("date").longValue())
-                    .atOffset(ZoneOffset.UTC)
-                    .toLocalDate();
-            BigDecimal amount = BigDecimal.valueOf(value.get("amount"));
-            Dividend dividend = Dividend.builder()
-                    .assetId(asset.getAssetId())
-                    .date(date)
-                    .amount(amount)
-                    .build();
-            dividends.add(dividend);
+        if (dividendsMap != null) {
+            for (Map.Entry<String, Map<String, Double>> entry : dividendsMap.entrySet()) {
+                Map<String, Double> value = entry.getValue();
+                LocalDate date = Instant.ofEpochSecond(value.get("date").longValue())
+                        .atOffset(ZoneOffset.UTC)
+                        .toLocalDate();
+                BigDecimal amount = BigDecimal.valueOf(value.get("amount"));
+                Dividend dividend = Dividend.builder()
+                        .assetId(asset.getAssetId())
+                        .date(date)
+                        .amount(amount)
+                        .build();
+                dividends.add(dividend);
+            }
         }
         return dividends;
     }

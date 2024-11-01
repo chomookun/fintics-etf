@@ -27,6 +27,10 @@ public class AssetResponse {
 
     private LocalDate updatedDate;
 
+    private BigDecimal close;
+
+    private BigDecimal volume;
+
     private BigDecimal marketCap;
 
     private BigDecimal dividendYield;
@@ -57,6 +61,8 @@ public class AssetResponse {
                 .market(asset.getMarket())
                 .exchange(asset.getExchange())
                 .updatedDate(asset.getUpdatedDate())
+                .close(asset.getClose())
+                .volume(asset.getVolume())
                 .marketCap(asset.getMarketCap())
                 .dividendYield(asset.getDividendYield())
                 .dividendFrequency(asset.getDividendFrequency())

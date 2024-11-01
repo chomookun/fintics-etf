@@ -2,6 +2,7 @@ package org.oopscraft.fintics.etf.collector;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.tools.ant.taskdefs.XSLTLiaison;
 import org.oopscraft.arch4j.core.common.support.RestTemplateBuilder;
 import org.oopscraft.fintics.etf.dao.*;
 import org.oopscraft.fintics.etf.model.Asset;
@@ -17,7 +18,10 @@ import org.springframework.web.client.RestTemplate;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.Currency;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -50,10 +54,29 @@ public abstract class AbstractMarketCollector {
         List<Asset> assets = getAssets();
         for (Asset asset : assets) {
             try {
-                // asset
+                // saves asset
+                sleep(3_000);
+                Map<String,String> assetDetail = getAssetDetail(asset);
+                asset.setUpdatedDate(LocalDate.now());
+                asset.setClose(Optional.ofNullable(assetDetail.get("close"))
+                        .map(BigDecimal::new)
+                        .orElse(null));
+                asset.setVolume(Optional.ofNullable(assetDetail.get("volume"))
+                        .map(BigDecimal::new)
+                        .orElse(null));
+                asset.setMarketCap(Optional.ofNullable(assetDetail.get("marketCap"))
+                        .map(BigDecimal::new)
+                        .orElse(null));
+                asset.setDividendYield(Optional.ofNullable(assetDetail.get("dividendYield"))
+                        .map(BigDecimal::new)
+                        .orElse(null));
+                asset.setDividendFrequency(Optional.ofNullable(assetDetail.get("dividendFrequency"))
+                        .map(Integer::parseInt)
+                        .orElse(null));
                 saveAsset(asset, transactionManager, assetRepository);
 
                 // dividends
+                sleep(3_000);
                 LocalDate dividendDateFrom = dividendRepository.findFirstByAssetIdOrderByDateDesc(asset.getAssetId())
                         .map(DividendEntity::getDate)
                         .orElse(LocalDate.now().minusYears(30))
@@ -63,6 +86,7 @@ public abstract class AbstractMarketCollector {
                 saveDividends(dividends, transactionManager, dividendRepository);
 
                 // ohlcvs
+                sleep(3_000);
                 LocalDate ohlcvDateFrom = ohlcvRepository.findFirstByAssetIdOrderByDateDesc(asset.getAssetId())
                         .map(OhlcvEntity::getDate)
                         .orElse(LocalDate.now().minusYears(30))
@@ -74,18 +98,24 @@ public abstract class AbstractMarketCollector {
             } catch (Throwable t) {
                 log.warn(t.getMessage());
             } finally {
-                try {
-                    Thread.sleep(10_000);
-                } catch (Throwable ignore) {}
+                sleep(10_000);
             }
         }
     }
 
     abstract List<Asset> getAssets();
 
+    abstract Map<String,String> getAssetDetail(Asset asset);
+
     abstract List<Dividend> getDividends(Asset asset, LocalDate dateFrom, LocalDate dateTo);
 
     abstract List<Ohlcv> getOhlcvs(Asset asset, LocalDate dateFrom, LocalDate dateTo);
+
+    static void sleep(long millis) {
+        try {
+            Thread.sleep(millis);
+        } catch (Throwable ignore) {}
+    }
 
     void saveAsset(Asset asset, PlatformTransactionManager transactionManager, AssetRepository assetRepository) {
         AssetEntity assetEntity = AssetEntity.builder()
@@ -93,6 +123,9 @@ public abstract class AbstractMarketCollector {
                 .name(asset.getName())
                 .market(asset.getMarket())
                 .exchange(asset.getExchange())
+                .updatedDate(asset.getUpdatedDate())
+                .close(asset.getClose())
+                .volume(asset.getVolume())
                 .marketCap(asset.getMarketCap())
                 .dividendYield(asset.getDividendYield())
                 .dividendFrequency(asset.getDividendFrequency())
@@ -168,6 +201,10 @@ public abstract class AbstractMarketCollector {
         }
     }
 
+    String toAssetId(String market, String symbol) {
+        return String.format("%s.%s", market, symbol);
+    }
+
     /**
      * convert to string to number
      * @param value number string
@@ -183,8 +220,53 @@ public abstract class AbstractMarketCollector {
         }
     }
 
-    String toAssetId(String market, String symbol) {
-        return String.format("%s.%s", market, symbol);
+    /**
+     * converts string to number
+     * @param value string
+     * @return number
+     */
+    BigDecimal convertStringToNumber(String value) {
+        if (value == null) {
+            return null;
+        }
+        value = value.replace(",", "");
+        try {
+            return new BigDecimal(value);
+        }catch(Throwable e){
+            return null;
+        }
+    }
+
+    /**
+     * converts currency string to number
+     * @param value currency string
+     * @return currency number
+     */
+    BigDecimal convertCurrencyToNumber(String value, Currency currency) {
+        if (value == null) {
+            return null;
+        }
+        try {
+            value = value.replace(currency.getSymbol(), "");
+            value = value.replace(",","");
+            return new BigDecimal(value);
+        } catch (Throwable e) {
+            return null;
+        }
+    }
+
+    /**
+     * converts percentage string to number
+     * @param value percentage string
+     * @return percentage number
+     */
+    BigDecimal convertPercentageToNumber(String value) {
+        value = value.replace("%", "");
+        try {
+            return new BigDecimal(value);
+        }catch(Throwable e){
+            return null;
+        }
     }
 
 }
