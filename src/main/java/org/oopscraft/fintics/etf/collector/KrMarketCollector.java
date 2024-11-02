@@ -144,9 +144,9 @@ public class KrMarketCollector extends AbstractMarketCollector {
         // dividends
         BigDecimal dividendYield = BigDecimal.ZERO;
         int dividendFrequency = 0;
-        LocalDate dateFrom = LocalDate.now().minusYears(1);
-        LocalDate dateTo = LocalDate.now().minusDays(1);
-        List<Dividend> dividends = getDividends(asset, dateFrom, dateTo);
+        LocalDate dividendDateFrom = LocalDate.now().minusYears(1);
+        LocalDate dividendDateTo = LocalDate.now().minusDays(1);
+        List<Dividend> dividends = getDividends(asset, dividendDateFrom, dividendDateTo);
         if (dividends.size() > 0) {
             // dividend yield
             dividendYield = dividends.stream()
@@ -159,6 +159,23 @@ public class KrMarketCollector extends AbstractMarketCollector {
         }
         assetDetail.put("dividendYield", dividendYield.toPlainString());
         assetDetail.put("dividendFrequency", String.valueOf(dividendFrequency));
+
+        // capital gain
+        LocalDate ohlcvDateFrom = LocalDate.now().minusYears(1);
+        LocalDate ohlcvDateTo = LocalDate.now();
+        List<Ohlcv> ohlcvs = getOhlcvs(asset, ohlcvDateFrom, ohlcvDateTo);
+        BigDecimal startClose = ohlcvs.get(ohlcvs.size()-1).getClose();
+        BigDecimal endClose = ohlcvs.get(0).getClose();
+        BigDecimal capitalGain = endClose.subtract(startClose)
+                .divide(startClose, MathContext.DECIMAL32)
+                .multiply(BigDecimal.valueOf(100))
+                .setScale(2, RoundingMode.FLOOR);
+        assetDetail.put("capitalGain", capitalGain.toPlainString());
+
+        // total return
+        BigDecimal totalReturn = capitalGain.add(dividendYield)
+                .setScale(2, RoundingMode.FLOOR);
+        assetDetail.put("totalReturn", totalReturn.toPlainString());
 
         // returns
         return assetDetail;
@@ -220,6 +237,12 @@ public class KrMarketCollector extends AbstractMarketCollector {
                 endPage += 30;
             }
         }
+
+        // sort date descending
+        dividends.sort(Comparator
+                .comparing(Dividend::getDate)
+                .reversed());
+
         // returns
         return dividends;
     }
@@ -284,6 +307,11 @@ public class KrMarketCollector extends AbstractMarketCollector {
                 endPage += 100;
             }
         }
+
+        // sort date descending
+        ohlcvs.sort(Comparator
+                .comparing(Ohlcv::getDate)
+                .reversed());
 
         // returns
         return ohlcvs;

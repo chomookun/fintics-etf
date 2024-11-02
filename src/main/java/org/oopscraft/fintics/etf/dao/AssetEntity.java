@@ -53,4 +53,10 @@ public class AssetEntity extends BaseEntity {
     @Column(name = "dividend_frequency")
     private Integer dividendFrequency;
 
+    @Column(name = "capital_gain", scale = 2)
+    private BigDecimal capitalGain;
+
+    @Column(name = "total_return", scale = 2)
+    private BigDecimal totalReturn;
+
 }

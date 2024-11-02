@@ -37,6 +37,10 @@ public class Asset {
 
     private Integer dividendFrequency;
 
+    private BigDecimal capitalGain;
+
+    private BigDecimal totalReturn;
+
     /**
      * gets symbol
      * @return symbol
@@ -61,6 +65,8 @@ public class Asset {
                 .marketCap(assetEntity.getMarketCap())
                 .dividendYield(assetEntity.getDividendYield())
                 .dividendFrequency(assetEntity.getDividendFrequency())
+                .capitalGain(assetEntity.getCapitalGain())
+                .totalReturn(assetEntity.getTotalReturn())
                 .build();
     }
 

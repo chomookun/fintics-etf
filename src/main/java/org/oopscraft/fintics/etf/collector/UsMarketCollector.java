@@ -20,6 +20,8 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.math.BigDecimal;
+import java.math.MathContext;
+import java.math.RoundingMode;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -96,6 +98,8 @@ public class UsMarketCollector extends AbstractMarketCollector {
         BigDecimal marketCap = null;
         BigDecimal dividendYield = BigDecimal.ZERO;
         Integer dividendFrequency = 0;
+        BigDecimal capitalGain = BigDecimal.ZERO;
+        BigDecimal totalReturn = BigDecimal.ZERO;
 
         // calls summary api
         HttpHeaders headers = createNasdaqHeaders();
@@ -142,6 +146,21 @@ public class UsMarketCollector extends AbstractMarketCollector {
             dividendFrequency = dividends.size();
         }
 
+        // capital gain
+        LocalDate ohlcvDateFrom = LocalDate.now().minusYears(1);
+        LocalDate ohlcvDateTo = LocalDate.now();
+        List<Ohlcv> ohlcvs = getOhlcvs(asset, ohlcvDateFrom, ohlcvDateTo);
+        BigDecimal startClose = ohlcvs.get(ohlcvs.size()-1).getClose();
+        BigDecimal endClose = ohlcvs.get(0).getClose();
+        capitalGain = endClose.subtract(startClose)
+                .divide(startClose, MathContext.DECIMAL32)
+                .multiply(BigDecimal.valueOf(100))
+                .setScale(2, RoundingMode.FLOOR);
+
+        // total return
+        totalReturn = capitalGain.add(dividendYield)
+                .setScale(2, RoundingMode.FLOOR);
+
         // return
         Map<String,String> assetDetail = new LinkedHashMap<>();
         assetDetail.put("close", Optional.ofNullable(close)
@@ -159,6 +178,8 @@ public class UsMarketCollector extends AbstractMarketCollector {
         assetDetail.put("dividendFrequency", Optional.ofNullable(dividendFrequency)
                 .map(String::valueOf)
                 .orElse(null));
+        assetDetail.put("capitalGain", capitalGain.toPlainString());
+        assetDetail.put("totalReturn", totalReturn.toPlainString());
         return assetDetail;
     }
 
@@ -245,6 +266,13 @@ public class UsMarketCollector extends AbstractMarketCollector {
                 dividends.add(dividend);
             }
         }
+
+        // sort date descending
+        dividends.sort(Comparator
+                .comparing(Dividend::getDate)
+                .reversed());
+
+        // returns
         return dividends;
     }
 
@@ -301,6 +329,13 @@ public class UsMarketCollector extends AbstractMarketCollector {
                     .build();
             ohlcvs.add(ohlcv);
         }
+
+        // sort date descending
+        ohlcvs.sort(Comparator
+                .comparing(Ohlcv::getDate)
+                .reversed());
+
+        // returns
         return ohlcvs;
     }
 

@@ -37,6 +37,10 @@ public class AssetResponse {
 
     private Integer dividendFrequency;
 
+    private BigDecimal capitalGain;
+
+    private BigDecimal totalReturn;
+
     /**
      * get asset icon
      * @return icon url
@@ -66,6 +70,8 @@ public class AssetResponse {
                 .marketCap(asset.getMarketCap())
                 .dividendYield(asset.getDividendYield())
                 .dividendFrequency(asset.getDividendFrequency())
+                .capitalGain(asset.getCapitalGain())
+                .totalReturn(asset.getTotalReturn())
                 .build();
     }
 

@@ -11,8 +11,10 @@ import org.oopscraft.fintics.etf.model.Dividend;
 import org.oopscraft.fintics.etf.model.Ohlcv;
 import org.springframework.boot.test.context.SpringBootTest;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 @SpringBootTest(classes = FinticsEtfConfiguration.class)
 @RequiredArgsConstructor
@@ -29,6 +31,24 @@ class KrMarketCollectorTest extends CoreTestSupport {
         List<Asset> assets = krMarketCollector.getAssets();
         // then
         log.info("assets: {}", assets);
+    }
+
+    @Disabled
+    @Test
+    void getAssetDetail() {
+        // given
+        Asset asset = Asset.builder()
+                .assetId("KR.069500")
+                .name("KODEX 200")
+                // close, volume, marketCap 은 목록 조회 시 존재 하므로 재조회 없이 목록의 값을 사용함.
+                .close(BigDecimal.valueOf(30_000))
+                .volume(BigDecimal.valueOf(10_000))
+                .marketCap(BigDecimal.valueOf(1_000_000))
+                .build();
+        // when
+        Map<String,String> assetDetail = krMarketCollector.getAssetDetail(asset);
+        // then
+        log.info("assetDetail:{}", assetDetail);
     }
 
     @Disabled

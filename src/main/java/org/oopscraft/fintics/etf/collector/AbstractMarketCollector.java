@@ -81,6 +81,12 @@ public abstract class AbstractMarketCollector {
                 asset.setDividendFrequency(Optional.ofNullable(assetDetail.get("dividendFrequency"))
                         .map(Integer::parseInt)
                         .orElse(null));
+                asset.setCapitalGain(Optional.ofNullable(assetDetail.get("capitalGain"))
+                        .map(BigDecimal::new)
+                        .orElse(null));
+                asset.setTotalReturn(Optional.ofNullable(assetDetail.get("totalReturn"))
+                        .map(BigDecimal::new)
+                        .orElse(null));
                 saveAsset(asset, transactionManager, assetRepository);
 
                 // dividends
@@ -135,6 +141,8 @@ public abstract class AbstractMarketCollector {
                 .marketCap(asset.getMarketCap())
                 .dividendYield(asset.getDividendYield())
                 .dividendFrequency(asset.getDividendFrequency())
+                .capitalGain(asset.getCapitalGain())
+                .totalReturn(asset.getTotalReturn())
                 .build();
         saveEntities("asset", List.of(assetEntity), transactionManager, assetRepository);
     }

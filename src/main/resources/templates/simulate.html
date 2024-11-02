@@ -183,12 +183,14 @@
                         <col style="width:3em;"/>
                         <col style="width:7em;"/>
                         <col/>
-                        <col style="width:5em;"/>
                         <col/>
                         <col/>
                         <col/>
                         <col/>
-                        <col style="width:10em;"/>
+                        <col/>
+                        <col/>
+                        <col/>
+                        <col/>
                         <col style="width:10em;"/>
                     </colgroup>
                     <thead>
@@ -202,6 +204,8 @@
                         <th data-th-text="#{fintics.etf.Asset.marketCap}" class="text-align--right"></th>
                         <th data-th-text="#{fintics.etf.Asset.dividendYield}" class="text-align--right"></th>
                         <th data-th-text="#{fintics.etf.Asset.dividendFrequency}" class="text-align--center"></th>
+                        <th data-th-text="#{fintics.etf.Asset.capitalGain}" class="text-align--right"></th>
+                        <th data-th-text="#{fintics.etf.Asset.totalReturn}" class="text-align--right"></th>
                         <th data-th-text="#{fintics.etf.Asset.links}" class="text-align--center"></th>
                     </tr>
                     </thead>
@@ -246,11 +250,11 @@
                         <td class="text-align--right">
                             <span data-duice-bind="asset" data-duice-property="marketCap" data-duice-format="number" class="number"></span>
                         </td>
-                        <td class="text-align--right font-weight--bold">
+                        <td class="text-align--right">
                             <span data-duice-bind="asset" data-duice-property="dividendYield" data-duice-format="number" class="number"></span>
                             <small class="code">%</small>
                         </td>
-                        <td class="text-align--center font-weight--bold">
+                        <td class="text-align--center">
                             <span data-duice-bind="asset" data-duice-property="dividendFrequency" class="number"></span>
                             <small class="link"
                                    data-duice-bind="asset"
@@ -259,6 +263,23 @@
                                 <img class="icon" th:src="@{/static/image/icon-open.svg}" alt=""/>
                             </small>
                         </td>
+
+                        <td class="text-align--right">
+                            <span data-duice-bind="asset" data-duice-property="capitalGain" data-duice-format="number" class="number"></span>
+                            <small class="code">%</small>
+                        </td>
+                        <td class="text-align--right font-weight--bold">
+                            <span data-duice-bind="asset"
+                                  data-duice-property="totalReturn"
+                                  data-duice-format="number"
+                                  data-duice-execute="
+                                  if (asset.totalReturn > 0) this.classList.add('color--green');
+                                  if (asset.totalReturn < 0) this.classList.add('color--red');
+                                  "
+                                  class="number"></span>
+                            <small class="code">%</small>
+                        </td>
+
                         <td class="text-align--center">
                             <select data-duice-bind="asset"
                                     data-duice-option="asset.links"
@@ -323,14 +344,16 @@
                         <col style="width:3em;"/>
                         <col style="width:7em;"/>
                         <col/>
+                        <col/>
+                        <col/>
+                        <col/>
+                        <col/>
+                        <col/>
+                        <col/>
+                        <col/>
+                        <col/>
+                        <col style="width:10em;"/>
                         <col style="width:5em;"/>
-                        <col/>
-                        <col/>
-                        <col/>
-                        <col/>
-                        <col style="width:10em;"/>
-                        <col style="width:10em;"/>
-                        <col style="width:10em;"/>
                     </colgroup>
                     <thead>
                     <tr style="height:4em;">
@@ -343,8 +366,10 @@
                         <th data-th-text="#{fintics.etf.Asset.volume}" class="text-align--right"></th>
                         <th data-th-text="#{fintics.etf.Asset.dividendYield}" class="text-align--right"></th>
                         <th data-th-text="#{fintics.etf.Asset.dividendFrequency}" class="text-align--center"></th>
+                        <th data-th-text="#{fintics.etf.Asset.capitalGain}" class="text-align--right"></th>
+                        <th data-th-text="#{fintics.etf.Asset.totalReturn}" class="text-align--right"></th>
                         <th data-th-text="#{fintics.etf.Asset.links}" class="text-align--center"></th>
-                        <th data-th-text="#{fintics.etf.BasketAsset.holdingWeight}" class="text-align--right"></th>
+                        <th data-th-text="#{fintics.etf.BasketAsset.holdingWeight}" class="text-align--center"></th>
                     </tr>
                     </thead>
                     <tbody>
@@ -395,6 +420,21 @@
                                    onclick="openDividendDialog(this.dataset.assetId);">
                                 <img class="icon" th:src="@{/static/image/icon-open.svg}" alt=""/>
                             </small>
+                        </td>
+                        <td class="text-align--right">
+                            <span data-duice-bind="basketAsset" data-duice-property="capitalGain" data-duice-format="number" class="number"></span>
+                            <small class="code">%</small>
+                        </td>
+                        <td class="text-align--right font-weight--bold">
+                            <span data-duice-bind="basketAsset"
+                                  data-duice-property="totalReturn"
+                                  data-duice-format="number"
+                                  data-duice-execute="
+                                  if (basketAsset.totalReturn > 0) this.classList.add('color--green');
+                                  if (basketAsset.totalReturn < 0) this.classList.add('color--red');
+                                  "
+                                  class="number"></span>
+                            <small class="code">%</small>
                         </td>
                         <td class="text-align--center">
                             <select data-duice-bind="basketAsset"
