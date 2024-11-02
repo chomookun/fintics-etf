@@ -472,29 +472,35 @@
         <style th:inline="css">
             #dividendDialog {
                 width: 400px;
+                min-height: 400px;
             }
         </style>
         <script th:inline="javascript">
             const dividendDialog = {
                 dialog: new duice.dialog.Dialog(document.getElementById('dividendDialog')),
-                assetId: null,
+                dividendSearch: new duice.ObjectProxy({
+                    assetId: null,
+                    _status: null
+                }),
                 dividends: new duice.ArrayProxy([]),
-                open: async function(assetId) {
-                    this.assetId = assetId;
+                open: function(assetId) {
+                    duice.ObjectProxy.reset(this.dividendSearch);
                     duice.ArrayProxy.clear(this.dividends);
-                    await this.getDividends(0);
-                    return this.dialog.open();
+                    this.dividendSearch.assetId = assetId;
+                    const promise = this.dialog.open();
+                    this.getDividends();
+                    return promise;
                 },
                 getDividends: async function() {
-                    let url = new URL(`${_apiUrl}/v1/dividends/${this.assetId}`, document.location.origin);
-                    duice.ArrayProxy.clear(this.dividends);
+                    let url = new URL(`${_apiUrl}/v1/dividends/${this.dividendSearch.assetId}`, document.location.origin);
+                    this.dividendSearch._status = 'loading';
                     await _fetch(url)
                         .then(response => {
                             return response.json();
                         })
                         .then(data => {
-                            duice.ArrayProxy.clear(this.dividends);
                             duice.ArrayProxy.assign(this.dividends, data);
+                            this.dividendSearch._status = 'completed';
                         });
                 }
             }
@@ -507,8 +513,8 @@
                 </h2>
             </div>
             <div class="display--flex flex-direction--column gap--1em padding--1em">
-                <div class="overflow-y--scroll" style="height:400px;">
-                    <table class="width--100">
+                <div class="overflow-y--scroll border-top--1" style="height:400px;">
+                    <table class="width--100 border-top--0">
                         <colgroup>
                             <col/>
                             <col/>
@@ -528,9 +534,17 @@
                                 <span data-duice-bind="dividend" data-duice-property="amount" data-duice-format="number" class="number"></span>
                             </td>
                         </tr>
-                        <tr data-duice-bind="dividendDialog.dividends"
-                            data-duice-if="return dividendDialog.dividends.length < 1;" hidden>
-                            <td colspan="100%" class="text-align--center font-size--smaller">No Data</td>
+                        <tr data-duice-bind="dividendDialog.dividendSearch"
+                            data-duice-if="return dividendDialog.dividendSearch._status === 'loading';" hidden>
+                            <td colspan="100%" class="text-align--center">
+                                <img class="icon font-size--larger" th:src="@{/static/image/loading.svg}" alt="loading"/>
+                            </td>
+                        </tr>
+                        <tr data-duice-bind="dividendDialog.dividendSearch"
+                            data-duice-if="return dividendDialog.dividendSearch._status === 'completed' && dividendDialog.dividends.length < 1;" hidden>
+                            <td colspan="100%" class="text-align--center font-size--smaller">
+                                <span data-th-text="#{web.global.itemNotFound(#{fintics.etf.Dividend})}"></span>
+                            </td>
                         </tr>
                         </tbody>
                     </table>
@@ -548,30 +562,36 @@
     <dialog id="ohlcvDialog">
         <style th:inline="css">
             #ohlcvDialog {
-                width: 1000px;
+                width: 800px;
             }
         </style>
         <script th:inline="javascript">
             const ohlcvDialog = {
                 dialog: new duice.dialog.Dialog(document.getElementById('ohlcvDialog')),
-                assetId: null,
+                ohlcvSearch: new duice.ObjectProxy({
+                    assetId: null,
+                    _status: null
+                }),
                 ohlcvs: new duice.ArrayProxy([]),
                 open: async function(assetId) {
-                    this.assetId = assetId;
+                    duice.ObjectProxy.reset(this.ohlcvSearch);
                     duice.ArrayProxy.clear(this.ohlcvs);
+                    this.ohlcvSearch.assetId = assetId;
+                    const promise = this.dialog.open();
                     await this.getOhlcvs();
-                    return this.dialog.open();
+                    return promise;
                 },
                 getOhlcvs: async function() {
-                    let url = new URL(`${_apiUrl}/v1/ohlcvs/${this.assetId}`, document.location.origin);
+                    let url = new URL(`${_apiUrl}/v1/ohlcvs/${this.ohlcvSearch.assetId}`, document.location.origin);
+                    this.ohlcvSearch._status = 'loading';
                     duice.ArrayProxy.clear(this.ohlcvs);
                     await _fetch(url)
                         .then(response => {
                             return response.json();
                         })
                         .then(data => {
-                            duice.ArrayProxy.clear(this.ohlcvs);
                             duice.ArrayProxy.assign(this.ohlcvs, data);
+                            this.ohlcvSearch._status = 'completed';
                         });
                 }
             }
@@ -579,13 +599,13 @@
         <div class="display--flex flex-direction--column padding--1em">
             <div>
                 <h2>
-                    <img class="icon" th:src="@{/static/image/icon-dividend.svg}" alt=""/>
-                    <span data-th-text="#{fintics.etf.Dividend}"></span>
+                    <img class="icon" th:src="@{/static/image/icon-ohlcv.svg}" alt=""/>
+                    <span data-th-text="#{fintics.etf.Ohlcv}"></span>
                 </h2>
             </div>
             <div class="display--flex flex-direction--column gap--1em padding--1em">
-                <div class="overflow-y--scroll" style="height:400px;">
-                    <table class="width--100">
+                <div class="overflow-y--scroll border-top--1" style="height:400px;">
+                    <table class="width--100 border-top--0">
                         <colgroup>
                             <col/>
                             <col/>
@@ -609,25 +629,33 @@
                             <td>
                                 <span data-duice-bind="ohlcv" data-duice-property="date" class="date"></span>
                             </td>
-                            <td class="text-align--center">
+                            <td>
                                 <span data-duice-bind="ohlcv" data-duice-property="open" data-duice-format="number" class="number"></span>
                             </td>
-                            <td class="text-align--center">
+                            <td>
                                 <span data-duice-bind="ohlcv" data-duice-property="high" data-duice-format="number" class="number"></span>
                             </td>
-                            <td class="text-align--center">
+                            <td>
                                 <span data-duice-bind="ohlcv" data-duice-property="low" data-duice-format="number" class="number"></span>
                             </td>
-                            <td class="text-align--center">
+                            <td>
                                 <span data-duice-bind="ohlcv" data-duice-property="close" data-duice-format="number" class="number"></span>
                             </td>
-                            <td class="text-align--center">
+                            <td>
                                 <span data-duice-bind="ohlcv" data-duice-property="volume" data-duice-format="number" class="number"></span>
                             </td>
                         </tr>
-                        <tr data-duice-bind="dividendDialog.dividends"
-                            data-duice-if="return dividendDialog.dividends.length < 1;" hidden>
-                            <td colspan="100%" class="text-align--center font-size--smaller">No Data</td>
+                        <tr data-duice-bind="ohlcvDialog.ohlcvSearch"
+                            data-duice-if="return ohlcvDialog.ohlcvSearch._status === 'loading';" hidden>
+                            <td colspan="100%" class="text-align--center">
+                                <img class="icon font-size--larger" th:src="@{/static/image/loading.svg}" alt="loading"/>
+                            </td>
+                        </tr>
+                        <tr data-duice-bind="ohlcvDialog.ohlcvs"
+                            data-duice-if="return ohlcvDialog.ohlcvSearch._status === 'completed' && ohlcvDialog.ohlcvs.length < 1;" hidden>
+                            <td colspan="100%" class="text-align--center">
+                                <span data-th-text="#{web.global.itemNotFound(#{fintics.etf.Ohlcv})}"></span>
+                            </td>
                         </tr>
                         </tbody>
                     </table>
