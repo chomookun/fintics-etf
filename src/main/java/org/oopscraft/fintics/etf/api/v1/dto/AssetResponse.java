@@ -68,8 +68,8 @@ public class AssetResponse {
                 .close(asset.getClose())
                 .volume(asset.getVolume())
                 .marketCap(asset.getMarketCap())
-                .dividendYield(asset.getDividendYield())
                 .dividendFrequency(asset.getDividendFrequency())
+                .dividendYield(asset.getDividendYield())
                 .capitalGain(asset.getCapitalGain())
                 .totalReturn(asset.getTotalReturn())
                 .build();

@@ -33,9 +33,9 @@ public class Asset {
 
     private BigDecimal marketCap;
 
-    private BigDecimal dividendYield;
-
     private Integer dividendFrequency;
+
+    private BigDecimal dividendYield;
 
     private BigDecimal capitalGain;
 
@@ -63,8 +63,8 @@ public class Asset {
                 .close(assetEntity.getClose())
                 .volume(assetEntity.getVolume())
                 .marketCap(assetEntity.getMarketCap())
-                .dividendYield(assetEntity.getDividendYield())
                 .dividendFrequency(assetEntity.getDividendFrequency())
+                .dividendYield(assetEntity.getDividendYield())
                 .capitalGain(assetEntity.getCapitalGain())
                 .totalReturn(assetEntity.getTotalReturn())
                 .build();

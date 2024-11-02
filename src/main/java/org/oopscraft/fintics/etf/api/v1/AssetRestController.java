@@ -35,8 +35,6 @@ public class AssetRestController {
             @RequestParam(value = "assetId", required = false) String assetId,
             @RequestParam(value = "name", required = false) String name,
             @RequestParam(value = "market", required = false) String market,
-            @RequestParam(value = "dividendYieldMin", required = false) BigDecimal dividendYieldMin,
-            @RequestParam(value = "dividendYieldMax", required = false) BigDecimal dividendYieldMax,
             @RequestParam(value = "dividendFrequencyMin", required = false) Integer dividendFrequencyMin,
             @RequestParam(value = "dividendFrequencyMax", required = false) Integer dividendFrequencyMax,
             @PageableDefault Pageable pageable
@@ -45,8 +43,6 @@ public class AssetRestController {
                 .assetId(assetId)
                 .name(name)
                 .market(market)
-                .dividendYieldMin(dividendYieldMin)
-                .dividendYieldMax(dividendYieldMax)
                 .dividendFrequencyMin(dividendFrequencyMin)
                 .dividendFrequencyMax(dividendFrequencyMax)
                 .build();

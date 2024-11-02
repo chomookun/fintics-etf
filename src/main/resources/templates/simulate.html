@@ -8,12 +8,15 @@
         // defines
         const assetSearch = new duice.ObjectProxy({
             market: 'KR',
-            dividendYieldMin: null,
             dividendFrequencyMin: null,
             key: 'name',
             value: null,
             _page: 0,
             _size: 10,
+            _sort: {
+                property: null,
+                direction: null
+            },
             _count: -1,
             _status: null
         });
@@ -35,9 +38,6 @@
             if (assetSearch.market != null) {
                 url.searchParams.append('market', assetSearch.market);
             }
-            if (assetSearch.dividendYieldMin != null) {
-                url.searchParams.append('dividendYieldMin', assetSearch.dividendYieldMin);
-            }
             if (assetSearch.dividendFrequencyMin != null) {
                 url.searchParams.append('dividendFrequencyMin', assetSearch.dividendFrequencyMin);
             }
@@ -46,6 +46,9 @@
             }
             url.searchParams.append('_page', assetSearch._page);
             url.searchParams.append('_size', assetSearch._size);
+            if (assetSearch._sort.property && assetSearch._sort.direction) {
+                url.searchParams.append('_sort', `${assetSearch._sort.property},${assetSearch._sort.direction}`);
+            }
             assetSearch._status = 'loading';
             duice.ArrayProxy.clear(assets);
             _fetch(url)
@@ -67,6 +70,33 @@
                 .finally(() => {
                     assetSearch._status = 'completed';
                 });
+        }
+
+        function getAssetsWithSort(element, property) {
+            if (property === assetSearch._sort.property) {
+                let direction = assetSearch._sort.direction;
+                if (!direction) {
+                    assetSearch._sort.direction = 'desc';
+                } else if (direction === 'desc') {
+                    assetSearch._sort.direction = 'asc';
+                } else if (direction === 'asc') {
+                    assetSearch._sort.direction = null;
+                }
+            } else {
+                assetSearch._sort.property = property;
+                assetSearch._sort.direction = 'desc';
+            }
+            getAssets(0);
+        }
+
+        function toggleAssetSort(element, property) {
+            let imgSrc = '/static/image/icon-sort.svg';
+            if (property === assetSearch._sort.property) {
+                if (assetSearch._sort.direction) {
+                    imgSrc = `/static/image/icon-sort-${assetSearch._sort.direction}.svg`;
+                }
+            }
+            element.src = imgSrc;
         }
 
         /**
@@ -140,16 +170,6 @@
                     </select>
                 </label>
                 <label class="grid-column--2 s__grid-column--6">
-                    <select class="width--100" data-duice-bind="assetSearch" data-duice-property="dividendYieldMin">
-                        <option value="" data-th-text="|#{fintics.etf.Asset.dividendYield}...|"></option>
-                        <option value="1">1%+ more</option>
-                        <option value="3">3%+ more</option>
-                        <option value="5">5%+ more</option>
-                        <option value="7">7%+ more</option>
-                        <option value="10">10%+ more</option>
-                    </select>
-                </label>
-                <label class="grid-column--2 s__grid-column--6">
                     <select class="width--100" data-duice-bind="assetSearch" data-duice-property="dividendFrequencyMin">
                         <option value="" data-th-text="|#{fintics.etf.Asset.dividendFrequency}...|"></option>
                         <option value="1">1+ times</option>
@@ -166,7 +186,7 @@
                 <label class="grid-column--2 s__grid-column--6">
                     <input class="width--100" type="text" data-duice-bind="assetSearch" data-duice-property="value"/>
                 </label>
-                <div class="grid-column--4 s__grid-column--12 justify-self--end">
+                <div class="grid-column--6 s__grid-column--12 justify-self--end">
                     <button type="submit" onclick="getAssets(0);">
                         <img class="icon" th:src="@{/static/image/icon-search.svg}" alt="search"/>
                         <span data-th-text="#{web.global.search}"></span>
@@ -196,17 +216,54 @@
                     <thead>
                     <tr style="height:4em;">
                         <th></th>
-                        <th data-th-text="#{fintics.etf.Asset.symbol}" class="text-align--center"></th>
-                        <th data-th-text="#{fintics.etf.Asset.name}"></th>
-                        <th data-th-text="#{fintics.etf.Asset.market}"></th>
-                        <th data-th-text="#{fintics.etf.Asset.close}" class="text-align--right"></th>
-                        <th data-th-text="#{fintics.etf.Asset.volume}" class="text-align--right"></th>
-                        <th data-th-text="#{fintics.etf.Asset.marketCap}" class="text-align--right"></th>
-                        <th data-th-text="#{fintics.etf.Asset.dividendYield}" class="text-align--right"></th>
-                        <th data-th-text="#{fintics.etf.Asset.dividendFrequency}" class="text-align--center"></th>
-                        <th data-th-text="#{fintics.etf.Asset.capitalGain}" class="text-align--right"></th>
-                        <th data-th-text="#{fintics.etf.Asset.totalReturn}" class="text-align--right"></th>
-                        <th data-th-text="#{fintics.etf.Asset.links}" class="text-align--center"></th>
+                        <th>
+                            <span data-th-text="#{fintics.etf.Asset.symbol}" class="text-align--center"></span>
+                        </th>
+                        <th>
+                            <span data-th-text="#{fintics.etf.Asset.name}"></span>
+                        </th>
+                        <th>
+                            <span data-th-text="#{fintics.etf.Asset.market}"></span>
+                        </th>
+                        <th class="text-align--right">
+                            <span data-th-text="#{fintics.etf.Asset.close}"></span>
+                        </th>
+                        <th class="text-align--right">
+                            <span data-th-text="#{fintics.etf.Asset.volume}"></span>
+                        </th>
+                        <th class="text-align--right">
+                            <span data-th-text="#{fintics.etf.Asset.marketCap}"></span>
+                        </th>
+                        <th class="text-align--center">
+                            <span data-th-text="#{fintics.etf.Asset.dividendFrequency}"></span>
+                        </th>
+                        <th class="text-align--right">
+                            <span data-th-text="#{fintics.etf.Asset.dividendYield}"></span>
+                            <img class="icon link"
+                                 th:src="@{/static/image/icon-sort.svg}" alt=""
+                                 data-duice-bind="assetSearch"
+                                 data-duice-execute="toggleAssetSort(this, 'dividendYield');"
+                                 onclick="getAssetsWithSort(this, 'dividendYield');"/>
+                        </th>
+                        <th class="text-align--right">
+                            <span data-th-text="#{fintics.etf.Asset.capitalGain}"></span>
+                            <img class="icon link"
+                                 th:src="@{/static/image/icon-sort.svg}" alt=""
+                                 data-duice-bind="assetSearch"
+                                 data-duice-execute="toggleAssetSort(this, 'capitalGain');"
+                                 onclick="getAssetsWithSort(this, 'capitalGain');"/>
+                        </th>
+                        <th class="text-align--right">
+                            <span data-th-text="#{fintics.etf.Asset.totalReturn}"></span>
+                            <img class="icon link"
+                                 th:src="@{/static/image/icon-sort.svg}" alt=""
+                                 data-duice-bind="assetSearch"
+                                 data-duice-execute="toggleAssetSort(this, 'totalReturn');"
+                                 onclick="getAssetsWithSort(this, 'totalReturn');"/>
+                        </th>
+                        <th class="text-align--center">
+                            <span data-th-text="#{fintics.etf.Asset.links}"></span>
+                        </th>
                     </tr>
                     </thead>
                     <tbody>
@@ -250,10 +307,6 @@
                         <td class="text-align--right">
                             <span data-duice-bind="asset" data-duice-property="marketCap" data-duice-format="number" class="number"></span>
                         </td>
-                        <td class="text-align--right">
-                            <span data-duice-bind="asset" data-duice-property="dividendYield" data-duice-format="number" class="number"></span>
-                            <small class="code">%</small>
-                        </td>
                         <td class="text-align--center">
                             <span data-duice-bind="asset" data-duice-property="dividendFrequency" class="number"></span>
                             <small class="link"
@@ -263,7 +316,10 @@
                                 <img class="icon" th:src="@{/static/image/icon-open.svg}" alt=""/>
                             </small>
                         </td>
-
+                        <td class="text-align--right">
+                            <span data-duice-bind="asset" data-duice-property="dividendYield" data-duice-format="number" class="number"></span>
+                            <small class="code">%</small>
+                        </td>
                         <td class="text-align--right">
                             <span data-duice-bind="asset" data-duice-property="capitalGain" data-duice-format="number" class="number"></span>
                             <small class="code">%</small>
@@ -364,8 +420,8 @@
                         <th data-th-text="#{fintics.etf.Asset.marketCap}" class="text-align--right"></th>
                         <th data-th-text="#{fintics.etf.Asset.close}" class="text-align--right"></th>
                         <th data-th-text="#{fintics.etf.Asset.volume}" class="text-align--right"></th>
-                        <th data-th-text="#{fintics.etf.Asset.dividendYield}" class="text-align--right"></th>
                         <th data-th-text="#{fintics.etf.Asset.dividendFrequency}" class="text-align--center"></th>
+                        <th data-th-text="#{fintics.etf.Asset.dividendYield}" class="text-align--right"></th>
                         <th data-th-text="#{fintics.etf.Asset.capitalGain}" class="text-align--right"></th>
                         <th data-th-text="#{fintics.etf.Asset.totalReturn}" class="text-align--right"></th>
                         <th data-th-text="#{fintics.etf.Asset.links}" class="text-align--center"></th>
@@ -408,11 +464,7 @@
                         <td class="text-align--right">
                             <span data-duice-bind="basketAsset" data-duice-property="volume" data-duice-format="number" class="number"></span>
                         </td>
-                        <td class="text-align--right font-weight--bold">
-                            <span data-duice-bind="basketAsset" data-duice-property="dividendYield" data-duice-format="number" class="number"></span>
-                            <small class="code">%</small>
-                        </td>
-                        <td class="text-align--center font-weight--bold">
+                        <td class="text-align--center">
                             <span data-duice-bind="basketAsset" data-duice-property="dividendFrequency" data-duice-format="number" class="number"></span>
                             <small class="link"
                                    data-duice-bind="basketAsset"
@@ -420,6 +472,10 @@
                                    onclick="openDividendDialog(this.dataset.assetId);">
                                 <img class="icon" th:src="@{/static/image/icon-open.svg}" alt=""/>
                             </small>
+                        </td>
+                        <td class="text-align--right">
+                            <span data-duice-bind="basketAsset" data-duice-property="dividendYield" data-duice-format="number" class="number"></span>
+                            <small class="code">%</small>
                         </td>
                         <td class="text-align--right">
                             <span data-duice-bind="basketAsset" data-duice-property="capitalGain" data-duice-format="number" class="number"></span>

@@ -15,10 +15,6 @@ public class AssetSearch {
 
     private String market;
 
-    private BigDecimal dividendYieldMin;
-
-    private BigDecimal dividendYieldMax;
-
     private Integer dividendFrequencyMin;
 
     private Integer dividendFrequencyMax;
