@@ -94,8 +94,8 @@ public class UsMarketCollector extends AbstractMarketCollector {
         BigDecimal close = null;
         BigDecimal volume = null;
         BigDecimal marketCap = null;
-        BigDecimal dividendYield = null;
-        Integer dividendFrequency = null;
+        BigDecimal dividendYield = BigDecimal.ZERO;
+        Integer dividendFrequency = 0;
 
         // calls summary api
         HttpHeaders headers = createNasdaqHeaders();
