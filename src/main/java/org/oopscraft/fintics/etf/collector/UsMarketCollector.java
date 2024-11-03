@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.oopscraft.fintics.etf.dao.AssetRepository;
 import org.oopscraft.fintics.etf.dao.DividendRepository;
@@ -30,6 +31,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Component
+@Slf4j
 public class UsMarketCollector extends AbstractMarketCollector {
 
     private final ObjectMapper objectMapper;
@@ -56,6 +58,7 @@ public class UsMarketCollector extends AbstractMarketCollector {
         RequestEntity<Void> requestEntity = RequestEntity.get(url)
                 .headers(createNasdaqHeaders())
                 .build();
+        sleep();
         ResponseEntity<String> responseEntity = getRestTemplate().exchange(requestEntity, String.class);
         String responseBody = responseEntity.getBody();
         JsonNode rootNode;
@@ -93,13 +96,7 @@ public class UsMarketCollector extends AbstractMarketCollector {
 
     @Override
     Map<String, String> getAssetDetail(Asset asset) {
-        BigDecimal close = null;
-        BigDecimal volume = null;
-        BigDecimal marketCap = null;
-        BigDecimal dividendYield = BigDecimal.ZERO;
-        Integer dividendFrequency = 0;
-        BigDecimal capitalGain = BigDecimal.ZERO;
-        BigDecimal totalReturn = BigDecimal.ZERO;
+        Map<String,String> assetDetail = new LinkedHashMap<>();
 
         // calls summary api
         HttpHeaders headers = createNasdaqHeaders();
@@ -110,6 +107,7 @@ public class UsMarketCollector extends AbstractMarketCollector {
         RequestEntity<Void> summaryRequestEntity = RequestEntity.get(summaryUrl)
                 .headers(headers)
                 .build();
+        sleep();
         ResponseEntity<String> summaryResponseEntity = getRestTemplate().exchange(summaryRequestEntity, String.class);
         JsonNode summaryRootNode;
         try {
@@ -118,10 +116,15 @@ public class UsMarketCollector extends AbstractMarketCollector {
             throw new RuntimeException(e);
         }
         JsonNode summaryDataNode = summaryRootNode.path("data").path("summaryData");
-        HashMap<String, Map<String,String>> summaryDataMap = objectMapper.convertValue(summaryDataNode, new TypeReference<>() {});
+        HashMap<String, Map<String, String>> summaryDataMap = objectMapper.convertValue(summaryDataNode, new TypeReference<>() {
+        });
 
         // price, market cap
-        for(String name : summaryDataMap.keySet()) {
+        BigDecimal close = null;
+        BigDecimal volume = null;
+        BigDecimal marketCap = null;
+        BigDecimal dividendYield = BigDecimal.ZERO;
+        for (String name : summaryDataMap.keySet()) {
             Map<String, String> map = summaryDataMap.get(name);
             String value = map.get("value");
             if (Objects.equals(name, "PreviousClose")) {
@@ -137,49 +140,38 @@ public class UsMarketCollector extends AbstractMarketCollector {
                 dividendYield = convertPercentageToNumber(value);
             }
         }
+        assetDetail.put("close", close.toPlainString());
+        assetDetail.put("volume", volume.toPlainString());
+        assetDetail.put("marketCap", marketCap.toPlainString());
+        assetDetail.put("dividendYield", dividendYield.toPlainString());
 
         // dividend frequency
         LocalDate dateFrom = LocalDate.now().minusYears(1);
         LocalDate dateTo = LocalDate.now().minusDays(1);
         List<Dividend> dividends = getDividends(asset, dateFrom, dateTo);
         if (dividends.size() > 0) {
-            dividendFrequency = dividends.size();
+            Integer dividendFrequency = dividends.size();
+            assetDetail.put("dividendFrequency", String.valueOf(dividendFrequency));
         }
 
         // capital gain
         LocalDate ohlcvDateFrom = LocalDate.now().minusYears(1);
         LocalDate ohlcvDateTo = LocalDate.now();
         List<Ohlcv> ohlcvs = getOhlcvs(asset, ohlcvDateFrom, ohlcvDateTo);
-        BigDecimal startClose = ohlcvs.get(ohlcvs.size()-1).getClose();
+        BigDecimal startClose = ohlcvs.get(ohlcvs.size() - 1).getClose();
         BigDecimal endClose = ohlcvs.get(0).getClose();
-        capitalGain = endClose.subtract(startClose)
+        BigDecimal capitalGain = endClose.subtract(startClose)
                 .divide(startClose, MathContext.DECIMAL32)
                 .multiply(BigDecimal.valueOf(100))
                 .setScale(2, RoundingMode.FLOOR);
+        assetDetail.put("capitalGain", capitalGain.toPlainString());
 
         // total return
-        totalReturn = capitalGain.add(dividendYield)
+        BigDecimal totalReturn = capitalGain.add(dividendYield)
                 .setScale(2, RoundingMode.FLOOR);
-
-        // return
-        Map<String,String> assetDetail = new LinkedHashMap<>();
-        assetDetail.put("close", Optional.ofNullable(close)
-                .map(BigDecimal::toPlainString)
-                .orElse(null));
-        assetDetail.put("volume", Optional.ofNullable(volume)
-                .map(BigDecimal::toPlainString)
-                .orElse(null));
-        assetDetail.put("marketCap", Optional.ofNullable(marketCap)
-                .map(BigDecimal::toPlainString)
-                .orElse(null));
-        assetDetail.put("dividendYield", Optional.ofNullable(dividendYield)
-                .map(BigDecimal::toPlainString)
-                .orElse(null));
-        assetDetail.put("dividendFrequency", Optional.ofNullable(dividendFrequency)
-                .map(String::valueOf)
-                .orElse(null));
-        assetDetail.put("capitalGain", capitalGain.toPlainString());
         assetDetail.put("totalReturn", totalReturn.toPlainString());
+
+        // returns
         return assetDetail;
     }
 
@@ -200,6 +192,7 @@ public class UsMarketCollector extends AbstractMarketCollector {
                 RequestEntity<Void> requestEntity = RequestEntity.get(url)
                         .headers(headers)
                         .build();
+                sleep();
                 String responseBody = getRestTemplate().exchange(requestEntity, String.class).getBody();
                 JsonNode rootNode = objectMapper.readTree(responseBody);
                 JsonNode resultNode = rootNode.path("quoteType").path("result");
@@ -239,6 +232,7 @@ public class UsMarketCollector extends AbstractMarketCollector {
                 .get(url)
                 .headers(headers)
                 .build();
+        sleep();
         ResponseEntity<String> responseEntity = getRestTemplate().exchange(requestEntity, String.class);
         JsonNode rootNode;
         try {
@@ -291,6 +285,7 @@ public class UsMarketCollector extends AbstractMarketCollector {
                 .get(url)
                 .headers(headers)
                 .build();
+        sleep();
         ResponseEntity<String> responseEntity = getRestTemplate().exchange(requestEntity, String.class);
         JsonNode rootNode;
         try {

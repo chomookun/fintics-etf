@@ -1,26 +1,24 @@
-package org.oopscraft.fintics.etf.model;
+package org.oopscraft.fintics.etf.api.v1.dto;
 
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
+import org.oopscraft.fintics.etf.model.SimulateResult;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
-@Getter
+@Data
 @Builder
-public class Simulate {
+@NoArgsConstructor
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+public class SimulateResponse {
 
     private BigDecimal investAmount;
 
     private LocalDate dateFrom;
 
     private LocalDate dateTo;
-
-    @Builder.Default
-    private List<SimulateAsset> simulateAssets = new ArrayList<>();
 
     @Setter
     private SimulateResult simulateResult;

@@ -12,7 +12,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/ohlcvs")
 @RequiredArgsConstructor
-public class OhlcvRestController {
+public class OhlcvsRestController {
 
     private final OhlcvService ohlcvService;
 

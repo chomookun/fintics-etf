@@ -18,7 +18,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.math.BigDecimal;
 import java.util.List;
 
 @RestController
@@ -26,7 +25,7 @@ import java.util.List;
 @Tag(name = "assets", description = "Assets")
 @RequiredArgsConstructor
 @Slf4j
-public class AssetRestController {
+public class AssetsRestController {
 
     private final AssetService assetService;
 

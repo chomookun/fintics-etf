@@ -1,7 +1,7 @@
 package org.oopscraft.fintics.etf.api.v1.dto;
 
-import lombok.Builder;
-import lombok.Getter;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
 import org.oopscraft.fintics.etf.model.Asset;
 
 import java.math.BigDecimal;
@@ -9,8 +9,10 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
-@Builder
-@Getter
+@Data
+@SuperBuilder
+@NoArgsConstructor
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class AssetResponse {
 
     private String assetId;

@@ -63,7 +63,6 @@ public abstract class AbstractMarketCollector {
                 }
 
                 // saves asset
-                sleep(3_000);
                 Map<String,String> assetDetail = getAssetDetail(asset);
                 asset.setUpdatedDate(LocalDate.now());
                 asset.setClose(Optional.ofNullable(assetDetail.get("close"))
@@ -90,7 +89,6 @@ public abstract class AbstractMarketCollector {
                 saveAsset(asset, transactionManager, assetRepository);
 
                 // dividends
-                sleep(3_000);
                 LocalDate dividendDateFrom = dividendRepository.findFirstByAssetIdOrderByDateDesc(asset.getAssetId())
                         .map(DividendEntity::getDate)
                         .orElse(LocalDate.now().minusYears(30))
@@ -100,7 +98,6 @@ public abstract class AbstractMarketCollector {
                 saveDividends(dividends, transactionManager, dividendRepository);
 
                 // ohlcvs
-                sleep(3_000);
                 LocalDate ohlcvDateFrom = ohlcvRepository.findFirstByAssetIdOrderByDateDesc(asset.getAssetId())
                         .map(OhlcvEntity::getDate)
                         .orElse(LocalDate.now().minusYears(30))
@@ -123,9 +120,9 @@ public abstract class AbstractMarketCollector {
 
     abstract List<Ohlcv> getOhlcvs(Asset asset, LocalDate dateFrom, LocalDate dateTo);
 
-    static void sleep(long millis) {
+    static void sleep() {
         try {
-            Thread.sleep(millis);
+            Thread.sleep(1_000);
         } catch (Throwable ignore) {}
     }
 

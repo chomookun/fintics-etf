@@ -83,6 +83,7 @@ public class KrMarketCollector extends AbstractMarketCollector {
         RequestEntity<String> requestEntity = RequestEntity.post(url)
                 .headers(headers)
                 .body(payloadXml);
+        sleep();
         ResponseEntity<String> responseEntity = getRestTemplate().exchange(requestEntity, String.class);
         String responseBody = responseEntity.getBody();
         List<Map<String, String>> rows = convertSeibroXmlToList(responseBody);
@@ -213,6 +214,7 @@ public class KrMarketCollector extends AbstractMarketCollector {
             RequestEntity<String> requestEntity = RequestEntity.post(url)
                     .headers(headers)
                     .body(payloadXml);
+            sleep();
             ResponseEntity<String> responseEntity = getRestTemplate().exchange(requestEntity, String.class);
 
             String responseBody = responseEntity.getBody();
@@ -279,6 +281,7 @@ public class KrMarketCollector extends AbstractMarketCollector {
             RequestEntity<String> requestEntity = RequestEntity.post(url)
                     .headers(headers)
                     .body(payloadXml);
+            sleep();
             ResponseEntity<String> responseEntity = getRestTemplate().exchange(requestEntity, String.class);
 
             String responseBody = responseEntity.getBody();
@@ -350,6 +353,7 @@ public class KrMarketCollector extends AbstractMarketCollector {
         RequestEntity<String> requestEntity = RequestEntity.post(url)
                 .headers(headers)
                 .body(payloadXml);
+        sleep();
         ResponseEntity<String> responseEntity = getRestTemplate().exchange(requestEntity, String.class);
         String responseBody = responseEntity.getBody();
         return convertSeibroXmlToMap(responseBody);
