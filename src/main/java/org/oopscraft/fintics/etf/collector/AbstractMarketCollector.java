@@ -2,6 +2,7 @@ package org.oopscraft.fintics.etf.collector;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.http.impl.client.StandardHttpRequestRetryHandler;
 import org.apache.tools.ant.taskdefs.XSLTLiaison;
 import org.oopscraft.arch4j.core.common.support.RestTemplateBuilder;
 import org.oopscraft.fintics.etf.dao.*;
@@ -46,7 +47,7 @@ public abstract class AbstractMarketCollector {
 
         // rest template
         this.restTemplate = RestTemplateBuilder.create()
-                .retryCount(3)
+                .httpRequestRetryHandler(new StandardHttpRequestRetryHandler())
                 .build();
     }
 
