@@ -490,6 +490,4 @@ public class KrMarketCollector extends AbstractMarketCollector {
         return list;
     }
 
-
-
 }
